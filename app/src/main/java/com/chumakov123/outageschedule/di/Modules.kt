@@ -9,14 +9,17 @@ import com.chumakov123.outageschedule.data.remote.parser.OutageHtmlParser
 import com.chumakov123.outageschedule.data.repository.DataStoreAppSettingsRepository
 import com.chumakov123.outageschedule.data.repository.DonEnergoBranchRepository
 import com.chumakov123.outageschedule.data.repository.DonEnergoOutageRepository
+import com.chumakov123.outageschedule.data.repository.RoomTrackedPlaceRepository
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
+import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
 import com.chumakov123.outageschedule.presentation.screen.history.HistoryViewModel
 import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingViewModel
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsViewModel
+import com.chumakov123.outageschedule.presentation.screen.trackedplaces.TrackedPlacesViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -47,6 +50,7 @@ val dataModule = module {
     }
 
     single { get<AppDatabase>().outageDao() }
+    single { get<AppDatabase>().trackedPlaceDao() }
 
     single<OutageRepository> {
         DonEnergoOutageRepository(
@@ -54,6 +58,12 @@ val dataModule = module {
             parser = get(),
             dao = get(),
             database = get()
+        )
+    }
+
+    single<TrackedPlaceRepository> {
+        RoomTrackedPlaceRepository(
+            dao = get()
         )
     }
 
@@ -74,4 +84,5 @@ val presentationModule = module {
     viewModelOf(::HistoryViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::TrackedPlacesViewModel)
 }

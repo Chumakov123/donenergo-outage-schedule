@@ -6,17 +6,17 @@ import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
+import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 data class AllOutagesState(
@@ -28,23 +28,42 @@ data class AllOutagesState(
 class AllOutagesViewModel(
     private val outageRepository: OutageRepository,
     private val branchRepository: BranchRepository,
-    private val settingsRepository: AppSettingsRepository
+    private val settingsRepository: AppSettingsRepository,
+    private val trackedPlaceRepository: TrackedPlaceRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AllOutagesState())
-    val state: StateFlow<AllOutagesState> = _state.asStateFlow()
+    val state: StateFlow<AllOutagesState> = _state
 
     init {
-        observeOutages()
+        refreshOnSelectionChange()
+        observeFilteredOutages()
     }
 
-    private fun observeOutages() {
+    private fun refreshOnSelectionChange() {
         viewModelScope.launch(Dispatchers.IO) {
-            val branchMap = runCatching {
-                branchRepository.getBranches().associateBy { it.url }
-            }.getOrDefault(emptyMap())
+            val branchMap = branchRepository.getBranches().associateBy { it.url }
 
-            @OptIn(ExperimentalCoroutinesApi::class)
+            settingsRepository.selectedBranchUrlsFlow
+                .distinctUntilChanged()
+                .collectLatest { urls ->
+                    val branches = urls.mapNotNull { branchMap[it] }
+                    if (branches.isNotEmpty()) {
+                        runCatching {
+                            outageRepository.refreshOutages(branches)
+                        }.onFailure { throwable ->
+                            _state.value = _state.value.copy(
+                                error = throwable.message ?: "Ошибка загрузки отключений"
+                            )
+                        }
+                    }
+                }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeFilteredOutages() {
+        viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.selectedBranchUrlsFlow
                 .distinctUntilChanged()
                 .flatMapLatest { urls ->
@@ -57,45 +76,20 @@ class AllOutagesViewModel(
                             )
                         )
                     } else {
-                        val selectedBranches = urls.mapNotNull { url ->
-                            branchMap[url]
-                        }
-
-                        flow {
-                            emit(
-                                AllOutagesState(
-                                    isLoading = true,
-                                    outages = _state.value.outages,
-                                    error = null
-                                )
-                            )
-
-                            runCatching {
-                                outageRepository.refreshOutages(selectedBranches)
-                            }.onFailure { throwable ->
-                                emit(
-                                    AllOutagesState(
-                                        isLoading = false,
-                                        outages = _state.value.outages,
-                                        error = throwable.message ?: "Ошибка загрузки отключений"
-                                    )
-                                )
-                            }
-
-                            emitAll(
-                                outageRepository.observeOutages(urls)
-                                    .map { outages ->
-                                        AllOutagesState(
-                                            isLoading = false,
-                                            outages = outages,
-                                            error = null
-                                        )
-                                    }
+                        combine(
+                            outageRepository.observeOutages(urls),
+                            trackedPlaceRepository.observePlaces()
+                        ) { outages, places ->
+                            val filtered = TrackedPlaceMatcher.filter(outages, places)
+                            AllOutagesState(
+                                isLoading = false,
+                                outages = filtered,
+                                error = null
                             )
                         }
                     }
                 }
-                .collect { newState ->
+                .collectLatest { newState ->
                     _state.value = newState
                 }
         }
