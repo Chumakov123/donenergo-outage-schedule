@@ -1,5 +1,7 @@
 package com.chumakov123.outageschedule.di
 
+import androidx.room.Room
+import com.chumakov123.outageschedule.data.local.database.AppDatabase
 import com.chumakov123.outageschedule.data.remote.datasource.BranchRemoteDataSource
 import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSource
 import com.chumakov123.outageschedule.data.remote.parser.BranchIndexParser
@@ -33,10 +35,23 @@ val dataModule = module {
     single { OutageRemoteDataSource() }
     single { OutageHtmlParser() }
 
+    single {
+        Room.databaseBuilder(
+            androidContext(),
+            AppDatabase::class.java,
+            "outage_schedule.db"
+        )
+            .fallbackToDestructiveMigration(false)
+            .build()
+    }
+
+    single { get<AppDatabase>().outageDao() }
+
     single<OutageRepository> {
         DonEnergoOutageRepository(
             remote = get(),
-            parser = get()
+            parser = get(),
+            dao = get()
         )
     }
 
