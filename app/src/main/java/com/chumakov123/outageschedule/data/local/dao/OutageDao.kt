@@ -14,13 +14,30 @@ interface OutageDao {
         """
         SELECT * FROM outages
         WHERE branchUrl IN (:branchUrls)
+          AND status != 'FINISHED'
         ORDER BY branchName, city, address
         """
     )
     fun observeOutages(branchUrls: List<String>): Flow<List<OutageEntity>>
 
-    @Query("DELETE FROM outages WHERE branchUrl = :branchUrl")
-    suspend fun deleteByBranchUrl(branchUrl: String)
+    @Query(
+        """
+        SELECT * FROM outages
+        WHERE branchUrl IN (:branchUrls)
+          AND status = 'FINISHED'
+        ORDER BY fetchedAt DESC, branchName, city, address
+        """
+    )
+    fun observeHistory(branchUrls: List<String>): Flow<List<OutageEntity>>
+
+    @Query(
+        """
+        DELETE FROM outages
+        WHERE branchUrl = :branchUrl
+          AND status != 'FINISHED'
+        """
+    )
+    suspend fun deleteCurrentByBranchUrl(branchUrl: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<OutageEntity>)

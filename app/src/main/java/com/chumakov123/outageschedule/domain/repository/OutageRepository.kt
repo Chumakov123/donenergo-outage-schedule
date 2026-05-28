@@ -11,4 +11,6 @@ interface OutageRepository {
     suspend fun refreshOutages(branches: List<Branch>)
 
     fun observeOutages(branchUrls: Set<String>): Flow<List<Outage>>
+
+    fun observeHistory(branchUrls: Set<String>): Flow<List<Outage>>
 }

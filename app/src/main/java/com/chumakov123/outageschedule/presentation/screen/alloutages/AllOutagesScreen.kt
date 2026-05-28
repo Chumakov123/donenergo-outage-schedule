@@ -5,8 +5,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
-import org.koin.compose.viewmodel.koinViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AllOutagesScreen(
@@ -29,8 +30,14 @@ fun AllOutagesScreen(
             Text("Загружено: ${state.outages.size}")
 
             state.outages.take(5).forEach {
+                val statusText = when (it.status) {
+                    OutageStatus.UPCOMING -> "Запланировано"
+                    OutageStatus.ACTIVE -> "Идёт"
+                    OutageStatus.FINISHED -> "Завершено"
+                }
+
                 Text(
-                    "${it.branchName}\n${it.city}\n${it.startDate}-${it.endDate}\n${it.startTime}-${it.endTime}\n${it.address}\n"
+                    "${it.branchName}\n$statusText\n${it.city}\n${it.startDate}-${it.endDate}\n${it.startTime}-${it.endTime}\n${it.address}\n"
                 )
             }
         }

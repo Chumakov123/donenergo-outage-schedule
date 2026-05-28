@@ -5,8 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "outages")
 data class OutageEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
+    val id: String,
     val branchUrl: String,
     val branchName: String,
     val city: String,
@@ -16,5 +16,6 @@ data class OutageEntity(
     val startTime: String?,
     val endTime: String?,
     val reason: String?,
+    val status: String,
     val fetchedAt: Long
 )

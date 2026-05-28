@@ -14,6 +14,7 @@ import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
+import com.chumakov123.outageschedule.presentation.screen.history.HistoryViewModel
 import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingViewModel
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
@@ -69,6 +70,7 @@ val domainModule = module {
 val presentationModule = module {
     viewModelOf(::AppEntryViewModel)
     viewModelOf(::AllOutagesViewModel)
+    viewModelOf(::HistoryViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::SettingsViewModel)
 }

@@ -7,17 +7,23 @@ import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSou
 import com.chumakov123.outageschedule.data.remote.parser.OutageHtmlParser
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.model.Outage
+import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import org.jsoup.Jsoup
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class DonEnergoOutageRepository(
     private val remote: OutageRemoteDataSource,
     private val parser: OutageHtmlParser,
     private val dao: OutageDao
 ) : OutageRepository {
+
+    private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault())
 
     override suspend fun fetchOutages(branchUrl: String): List<Outage> {
         val html = remote.fetchHtml(branchUrl)
@@ -29,9 +35,11 @@ class DonEnergoOutageRepository(
         val now = System.currentTimeMillis()
 
         for (branch in branches) {
-            val outages = fetchOutages(branch.url)
+            val outages = fetchOutages(branch.url).map { outage ->
+                outage.copy(status = calculateStatus(outage))
+            }
 
-            dao.deleteByBranchUrl(branch.url)
+            dao.deleteCurrentByBranchUrl(branch.url)
 
             dao.insertAll(
                 outages.map { outage ->
@@ -50,5 +58,35 @@ class DonEnergoOutageRepository(
 
         return dao.observeOutages(branchUrls.toList())
             .map { list -> list.map { it.toDomain() } }
+    }
+
+    override fun observeHistory(branchUrls: Set<String>): Flow<List<Outage>> {
+        if (branchUrls.isEmpty()) return flowOf(emptyList())
+
+        return dao.observeHistory(branchUrls.toList())
+            .map { list -> list.map { it.toDomain() } }
+    }
+
+    private fun calculateStatus(outage: Outage): OutageStatus {
+        val now = LocalDateTime.now()
+
+        val start = parseDateTime(outage.startDate, outage.startTime)
+        val end = parseDateTime(outage.endDate, outage.endTime)
+
+        return when {
+            end != null && now.isAfter(end) -> OutageStatus.FINISHED
+            start != null && now.isBefore(start) -> OutageStatus.UPCOMING
+            start != null || end != null -> OutageStatus.ACTIVE
+            else -> OutageStatus.UPCOMING
+        }
+    }
+
+    private fun parseDateTime(date: String?, time: String?): LocalDateTime? {
+        val d = date?.takeIf { it.isNotBlank() } ?: return null
+        val t = time?.takeIf { it.isNotBlank() } ?: return null
+
+        return runCatching {
+            LocalDateTime.parse("$d $t", formatter)
+        }.getOrNull()
     }
 }

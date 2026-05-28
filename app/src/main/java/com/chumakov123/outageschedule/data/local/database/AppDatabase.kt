@@ -7,7 +7,7 @@ import com.chumakov123.outageschedule.data.local.entity.OutageEntity
 
 @Database(
     entities = [OutageEntity::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
