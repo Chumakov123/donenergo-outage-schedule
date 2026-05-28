@@ -7,5 +7,6 @@ data class Outage(
     val endDate: String?,
     val startTime: String?,
     val endTime: String?,
-    val reason: String?
+    val reason: String?,
+    val branchName: String = ""
 )

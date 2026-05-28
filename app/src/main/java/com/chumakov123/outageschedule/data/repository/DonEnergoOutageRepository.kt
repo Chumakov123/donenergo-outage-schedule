@@ -17,7 +17,8 @@ class DonEnergoOutageRepository(
 
         val html = remote.fetchHtml(branchUrl)
         val doc = Jsoup.parse(html)
+        val outages = parser.parse(doc)
 
-        return parser.parse(doc)
+        return outages
     }
 }

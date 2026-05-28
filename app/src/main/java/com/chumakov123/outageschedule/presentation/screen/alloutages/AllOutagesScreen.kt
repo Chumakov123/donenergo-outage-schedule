@@ -18,7 +18,9 @@ fun AllOutagesScreen(
             Text("Загружено: ${data.value.size}")
 
             data.value.take(5).forEach {
-                Text("${it.city}\n${it.startDate}-${it.endDate}\n${it.startTime}-${it.endTime}\n${it.address}\n")
+                Text(
+                    "${it.branchName}\n${it.city}\n${it.startDate}-${it.endDate}\n${it.startTime}-${it.endTime}\n${it.address}\n"
+                )
             }
         }
     }
