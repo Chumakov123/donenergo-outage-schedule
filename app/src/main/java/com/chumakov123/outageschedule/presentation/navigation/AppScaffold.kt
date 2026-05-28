@@ -18,6 +18,12 @@ import androidx.navigation.compose.rememberNavController
 fun AppScaffold() {
     val navController = rememberNavController()
 
+    val startDestination =
+        if (AppState.isOnboardingCompleted)
+            Screen.AllOutages.route
+        else
+            Screen.Onboarding.route
+
     Scaffold(
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
@@ -61,6 +67,7 @@ fun AppScaffold() {
 
         AppNavHost(
             navController = navController,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         )
     }
