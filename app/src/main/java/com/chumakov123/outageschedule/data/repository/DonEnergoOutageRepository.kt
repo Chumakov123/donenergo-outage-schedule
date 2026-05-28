@@ -1,6 +1,8 @@
 package com.chumakov123.outageschedule.data.repository
 
+import androidx.room.withTransaction
 import com.chumakov123.outageschedule.data.local.dao.OutageDao
+import com.chumakov123.outageschedule.data.local.database.AppDatabase
 import com.chumakov123.outageschedule.data.local.mapper.toDomain
 import com.chumakov123.outageschedule.data.local.mapper.toEntity
 import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSource
@@ -20,7 +22,8 @@ import java.util.Locale
 class DonEnergoOutageRepository(
     private val remote: OutageRemoteDataSource,
     private val parser: OutageHtmlParser,
-    private val dao: OutageDao
+    private val dao: OutageDao,
+    private val database: AppDatabase
 ) : OutageRepository {
 
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault())
@@ -34,22 +37,24 @@ class DonEnergoOutageRepository(
     override suspend fun refreshOutages(branches: List<Branch>) {
         val now = System.currentTimeMillis()
 
-        for (branch in branches) {
-            val outages = fetchOutages(branch.url).map { outage ->
-                outage.copy(status = calculateStatus(outage))
-            }
-
-            dao.deleteCurrentByBranchUrl(branch.url)
-
-            dao.insertAll(
-                outages.map { outage ->
-                    outage.toEntity(
-                        branchUrl = branch.url,
-                        branchName = branch.name,
-                        fetchedAt = now
-                    )
+        database.withTransaction {
+            for (branch in branches) {
+                val outages = fetchOutages(branch.url).map { outage ->
+                    outage.copy(status = calculateStatus(outage))
                 }
-            )
+
+                dao.deleteCurrentByBranchUrl(branch.url)
+
+                dao.insertAll(
+                    outages.map { outage ->
+                        outage.toEntity(
+                            branchUrl = branch.url,
+                            branchName = branch.name,
+                            fetchedAt = now
+                        )
+                    }
+                )
+            }
         }
     }
 

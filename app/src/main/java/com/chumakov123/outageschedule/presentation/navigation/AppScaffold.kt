@@ -1,20 +1,22 @@
 package com.chumakov123.outageschedule.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.chumakov123.outageschedule.data.work.OutageSyncScheduler
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import org.koin.androidx.compose.koinViewModel
 
@@ -24,11 +26,16 @@ fun AppScaffold(
 ) {
     val entryState by viewModel.state.collectAsState()
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    LaunchedEffect(entryState.isOnboardingCompleted) {
+        if (entryState.isOnboardingCompleted) {
+            OutageSyncScheduler.schedule(context)
+        }
+    }
 
     if (entryState.isLoading) {
-        ScreenContainer {
-            CircularProgressIndicator()
-        }
+        ScreenContainer { }
         return
     }
 

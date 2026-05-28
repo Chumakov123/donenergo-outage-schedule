@@ -22,6 +22,10 @@ fun AllOutagesScreen(
                 return@ScreenContainer
             }
 
+            if (state.isLoading) {
+                Text("Обновление...")
+            }
+
             if (state.error != null && state.outages.isEmpty()) {
                 Text(state.error)
                 return@ScreenContainer

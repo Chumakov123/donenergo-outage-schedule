@@ -52,7 +52,8 @@ val dataModule = module {
         DonEnergoOutageRepository(
             remote = get(),
             parser = get(),
-            dao = get()
+            dao = get(),
+            database = get()
         )
     }
 
