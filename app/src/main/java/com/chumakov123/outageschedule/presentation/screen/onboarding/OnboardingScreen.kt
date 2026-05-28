@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import com.chumakov123.outageschedule.presentation.navigation.AppState
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -17,35 +17,33 @@ fun OnboardingScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
+    LaunchedEffect(Unit) {
+        viewModel.finishEvent.collect {
+            onFinish()
+        }
+    }
+
     Column {
 
-        Text("Выбор филиала")
+        Text("Выбор филиалов (минимум 1)")
 
         state.branches.forEach { branch ->
 
-            val isSelected = branch == state.selected
+            val selected = state.selectedUrls.contains(branch.url)
 
             Text(
-                text = if (isSelected) {
-                    "✓ ${branch.name}"
-                } else {
-                    branch.name
-                },
+                text = if (selected) "✓ ${branch.name}" else branch.name,
                 modifier = Modifier.clickable {
-                    viewModel.select(branch)
+                    viewModel.toggle(branch)
                 }
             )
         }
 
         Button(
             onClick = {
-
-                AppState.selectedBranch = state.selected
-
-                AppState.isOnboardingCompleted = true
-
-                onFinish()
-            }
+                viewModel.finish()
+            },
+            enabled = state.selectedUrls.isNotEmpty()
         ) {
             Text("Продолжить")
         }
