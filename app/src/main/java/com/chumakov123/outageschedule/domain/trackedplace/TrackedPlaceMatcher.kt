@@ -3,6 +3,11 @@ package com.chumakov123.outageschedule.domain.trackedplace
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 
+data class TrackedPlaceMatch(
+    val place: TrackedPlace,
+    val matchedStreetText: String? = null
+)
+
 object TrackedPlaceMatcher {
 
     fun filter(
@@ -16,13 +21,26 @@ object TrackedPlaceMatcher {
         }
     }
 
+    fun findBestMatch(
+        outage: Outage,
+        places: List<TrackedPlace>
+    ): TrackedPlaceMatch? {
+        return places.asSequence()
+            .mapNotNull { place -> findMatch(place, outage) }
+            .firstOrNull()
+    }
+
     private fun matches(place: TrackedPlace, outage: Outage): Boolean {
+        return findMatch(place, outage) != null
+    }
+
+    private fun findMatch(place: TrackedPlace, outage: Outage): TrackedPlaceMatch? {
         val placeCity = AddressNormalizer.normalizeComparable(place.city)
         val placeStreet = AddressNormalizer.normalizeComparable(place.street)
         val outageCity = AddressNormalizer.normalizeComparable(outage.city)
 
         if (placeCity.isNotBlank() && !containsEitherWay(outageCity, placeCity)) {
-            return false
+            return null
         }
 
         val segments = AddressSegmentParser.splitCandidates(outage.address)
@@ -34,30 +52,48 @@ object TrackedPlaceMatcher {
                     normalizedAddress.contains(placeStreet) ||
                     placeStreet.contains(normalizedAddress)
 
-            if (!streetOk) return false
+            if (!streetOk) return null
 
-            return HouseMatcher.matches(
-                requestHouse = place.house,
-                candidateExpressions = emptyList(),
-                fallbackText = outage.address
+            if (!HouseMatcher.matches(
+                    requestHouse = place.house,
+                    candidateExpressions = emptyList(),
+                    fallbackText = outage.address
+                )
+            ) {
+                return null
+            }
+
+            return TrackedPlaceMatch(
+                place = place,
+                matchedStreetText = place.street.takeIf { it.isNotBlank() }
             )
         }
 
-        return segments.any { segment ->
+        for (segment in segments) {
             val normalizedStreet = AddressNormalizer.normalizeComparable(segment.streetText)
 
             val streetOk = placeStreet.isBlank() ||
                     normalizedStreet.contains(placeStreet) ||
                     placeStreet.contains(normalizedStreet)
 
-            if (!streetOk) return@any false
+            if (!streetOk) continue
 
-            HouseMatcher.matches(
-                requestHouse = place.house,
-                candidateExpressions = segment.houseExpressions,
-                fallbackText = segment.raw
+            if (!HouseMatcher.matches(
+                    requestHouse = place.house,
+                    candidateExpressions = segment.houseExpressions,
+                    fallbackText = segment.raw
+                )
+            ) {
+                continue
+            }
+
+            return TrackedPlaceMatch(
+                place = place,
+                matchedStreetText = segment.streetText.takeIf { it.isNotBlank() } ?: place.street.takeIf { it.isNotBlank() }
             )
         }
+
+        return null
     }
 
     private fun containsEitherWay(source: String, query: String): Boolean {

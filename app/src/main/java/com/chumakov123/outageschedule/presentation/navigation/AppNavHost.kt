@@ -41,9 +41,9 @@ fun AppNavHost(
             TrackedPlacesScreen()
         }
 
-        composable(Screen.History.route) {
-            HistoryScreen()
-        }
+//        composable(Screen.History.route) {
+//            HistoryScreen()
+//        }
 
         composable(Screen.Settings.route) {
             SettingsScreen()

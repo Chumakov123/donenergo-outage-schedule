@@ -49,7 +49,7 @@ val dataModule = module {
             AppDatabase::class.java,
             "outage_schedule.db"
         )
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 

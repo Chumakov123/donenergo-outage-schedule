@@ -230,7 +230,7 @@ fun TrackedPlacesScreen(
                     )
                     if (state.editError != null) {
                         Text(
-                            text = state.editError!!,
+                            text = state.editError,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
