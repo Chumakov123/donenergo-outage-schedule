@@ -33,25 +33,28 @@ class TrackedPlacesViewModel(
     private fun observePlaces() {
         viewModelScope.launch(Dispatchers.IO) {
             repository.observePlaces().collectLatest { places ->
-                _state.value = _state.value.copy(places = places, error = null)
+                _state.value = _state.value.copy(
+                    places = places,
+                    error = null
+                )
             }
         }
     }
 
     fun onTitleChange(value: String) {
-        _state.value = _state.value.copy(title = value)
+        _state.value = _state.value.copy(title = value, error = null)
     }
 
     fun onCityChange(value: String) {
-        _state.value = _state.value.copy(city = value)
+        _state.value = _state.value.copy(city = value, error = null)
     }
 
     fun onStreetChange(value: String) {
-        _state.value = _state.value.copy(street = value)
+        _state.value = _state.value.copy(street = value, error = null)
     }
 
     fun onHouseChange(value: String) {
-        _state.value = _state.value.copy(house = value)
+        _state.value = _state.value.copy(house = value, error = null)
     }
 
     fun addPlace() {
@@ -60,9 +63,9 @@ class TrackedPlacesViewModel(
         val city = current.city.trim()
         val street = current.street.trim()
 
-        if (city.isBlank() || street.isBlank()) {
+        if (city.isBlank() && street.isBlank()) {
             _state.value = current.copy(
-                error = "Город и улица обязательны"
+                error = "Нужно заполнить хотя бы один из первых двух полей"
             )
             return
         }

@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +30,16 @@ fun TrackedPlacesScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
-            Text("Отслеживаемые места")
+            Text(
+                text = "Отслеживаемые места",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = "Можно оставить только первое или только второе поле",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             OutlinedTextField(
                 value = state.title,
@@ -41,34 +52,32 @@ fun TrackedPlacesScreen(
                 value = state.city,
                 onValueChange = viewModel::onCityChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Город") }
+                label = { Text("Населённый пункт или район") }
             )
 
             OutlinedTextField(
                 value = state.street,
                 onValueChange = viewModel::onStreetChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Улица") }
+                label = { Text("Улица, СНТ, объект") }
             )
 
             OutlinedTextField(
                 value = state.house,
                 onValueChange = viewModel::onHouseChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Дом") }
+                label = { Text("Дом, литера, дробь") }
             )
 
             if (state.error != null) {
                 Text(state.error)
             }
 
-            Button(
-                onClick = viewModel::addPlace
-            ) {
+            Button(onClick = viewModel::addPlace) {
                 Text("Добавить")
             }
 
-            Divider()
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small)
@@ -82,12 +91,12 @@ fun TrackedPlacesScreen(
                     ) {
                         Column {
                             Text(place.title)
-                            Text("${place.city}, ${place.street}${if (place.house.isNotBlank()) ", ${place.house}" else ""}")
+                            Text(
+                                "${place.city}${if (place.city.isNotBlank() && place.street.isNotBlank()) ", " else ""}${place.street}${if (place.house.isNotBlank()) ", ${place.house}" else ""}"
+                            )
                         }
 
-                        Button(
-                            onClick = { viewModel.deletePlace(place) }
-                        ) {
+                        Button(onClick = { viewModel.deletePlace(place) }) {
                             Text("Удалить")
                         }
                     }

@@ -17,22 +17,50 @@ object TrackedPlaceMatcher {
     }
 
     private fun matches(place: TrackedPlace, outage: Outage): Boolean {
-        if (!containsNormalized(outage.city, place.city)) return false
-        if (!containsNormalized(outage.address, place.street)) return false
+        val placeCity = AddressNormalizer.normalizeComparable(place.city)
+        val placeStreet = AddressNormalizer.normalizeComparable(place.street)
+        val outageCity = AddressNormalizer.normalizeComparable(outage.city)
 
-        val house = place.house.trim()
-        if (house.isNotEmpty() && !containsNormalized(outage.address, house)) return false
+        if (placeCity.isNotBlank() && !containsEitherWay(outageCity, placeCity)) {
+            return false
+        }
 
-        return true
+        val segments = AddressSegmentParser.splitCandidates(outage.address)
+
+        if (segments.isEmpty()) {
+            val normalizedAddress = AddressNormalizer.normalizeComparable(outage.address)
+
+            val streetOk = placeStreet.isBlank() ||
+                    normalizedAddress.contains(placeStreet) ||
+                    placeStreet.contains(normalizedAddress)
+
+            if (!streetOk) return false
+
+            return HouseMatcher.matches(
+                requestHouse = place.house,
+                candidateExpressions = emptyList(),
+                fallbackText = outage.address
+            )
+        }
+
+        return segments.any { segment ->
+            val normalizedStreet = AddressNormalizer.normalizeComparable(segment.streetText)
+
+            val streetOk = placeStreet.isBlank() ||
+                    normalizedStreet.contains(placeStreet) ||
+                    placeStreet.contains(normalizedStreet)
+
+            if (!streetOk) return@any false
+
+            HouseMatcher.matches(
+                requestHouse = place.house,
+                candidateExpressions = segment.houseExpressions,
+                fallbackText = segment.raw
+            )
+        }
     }
 
-    private fun containsNormalized(source: String, query: String): Boolean {
-        if (query.isBlank()) return true
-        return normalize(source).contains(normalize(query))
-    }
-
-    private fun normalize(text: String): String {
-        return text.lowercase()
-            .replace(Regex("[^\\p{L}\\p{Nd}]"), "")
+    private fun containsEitherWay(source: String, query: String): Boolean {
+        return source.contains(query) || query.contains(source)
     }
 }
