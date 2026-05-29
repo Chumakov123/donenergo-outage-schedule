@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import com.chumakov123.outageschedule.domain.model.Outage
@@ -183,6 +184,16 @@ fun AllOutagesScreen(
                                     text = reason,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                        outage.note
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { note ->
+                                Text(
+                                    text = "Примечание: $note",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                             }
 

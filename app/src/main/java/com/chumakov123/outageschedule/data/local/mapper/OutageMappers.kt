@@ -33,6 +33,7 @@ fun OutageEntity.toDomain(): Outage {
         startTime = startTime,
         endTime = endTime,
         reason = reason,
+        note = note,
         branchName = branchName,
         status = runCatching { OutageStatus.valueOf(status) }.getOrDefault(OutageStatus.UPCOMING)
     )
@@ -62,6 +63,7 @@ fun Outage.toEntity(
         startTime = startTime,
         endTime = endTime,
         reason = reason,
+        note = note,
         status = status.name,
         fetchedAt = fetchedAt
     )

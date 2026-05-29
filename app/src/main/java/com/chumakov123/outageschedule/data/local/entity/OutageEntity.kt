@@ -16,6 +16,7 @@ data class OutageEntity(
     val startTime: String?,
     val endTime: String?,
     val reason: String?,
+    val note: String?,
     val status: String,
     val fetchedAt: Long
 )

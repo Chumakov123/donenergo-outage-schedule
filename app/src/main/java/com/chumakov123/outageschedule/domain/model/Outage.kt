@@ -8,6 +8,7 @@ data class Outage(
     val startTime: String?,
     val endTime: String?,
     val reason: String?,
+    val note: String? = null,
     val branchName: String = "",
     val status: OutageStatus = OutageStatus.UPCOMING
 )

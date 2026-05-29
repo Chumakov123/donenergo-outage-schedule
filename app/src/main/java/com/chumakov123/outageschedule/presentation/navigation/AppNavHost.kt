@@ -6,7 +6,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesScreen
-import com.chumakov123.outageschedule.presentation.screen.history.HistoryScreen
 import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingScreen
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsScreen
 import com.chumakov123.outageschedule.presentation.screen.trackedplaces.TrackedPlacesScreen

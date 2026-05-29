@@ -18,7 +18,7 @@ import com.chumakov123.outageschedule.data.local.entity.TrackedPlaceEntity
         BranchLocalityEntity::class,
         SentNotificationEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

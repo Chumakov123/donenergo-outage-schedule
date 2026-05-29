@@ -32,6 +32,7 @@ class OutageHtmlParser {
             val endTime = cols[6].text().trim().replace("=", ":")
 
             val reason = cols[7].text().trim()
+            val note = if (cols.size > 8) cols[8].text().trim().takeIf { it.isNotEmpty() } else null
 
             result.add(
                 Outage(
@@ -41,7 +42,8 @@ class OutageHtmlParser {
                     endDate = endDate,
                     startTime = startTime,
                     endTime = endTime,
-                    reason = reason
+                    reason = reason,
+                    note = note
                 )
             )
         }
