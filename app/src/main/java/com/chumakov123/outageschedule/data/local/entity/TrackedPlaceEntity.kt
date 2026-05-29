@@ -10,5 +10,6 @@ data class TrackedPlaceEntity(
     val title: String,
     val city: String,
     val street: String,
-    val house: String
+    val house: String,
+    val isEnabled: Boolean = true
 )

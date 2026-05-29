@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.chumakov123.outageschedule.data.local.entity.TrackedPlaceEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -16,6 +17,9 @@ interface TrackedPlaceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(place: TrackedPlaceEntity): Long
+
+    @Update
+    suspend fun update(place: TrackedPlaceEntity)   // новый метод
 
     @Delete
     suspend fun delete(place: TrackedPlaceEntity)

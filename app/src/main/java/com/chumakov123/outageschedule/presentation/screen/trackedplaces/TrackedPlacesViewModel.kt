@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.collections.asSequence
 
@@ -25,7 +26,14 @@ data class TrackedPlacesState(
     val error: String? = null,
     val citySuggestions: List<String> = emptyList(),
     val streetSuggestions: List<String> = emptyList(),
-    val suggestionsLoading: Boolean = true
+    val suggestionsLoading: Boolean = true,
+
+    val editingPlaceId: Long? = null,
+    val editTitle: String = "",
+    val editCity: String = "",
+    val editStreet: String = "",
+    val editHouse: String = "",
+    val editError: String? = null
 )
 
 class TrackedPlacesViewModel(
@@ -180,6 +188,75 @@ class TrackedPlacesViewModel(
     fun deletePlace(place: TrackedPlace) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deletePlace(place.id)
+        }
+    }
+
+    fun startEditing(place: TrackedPlace) {
+        _state.value = _state.value.copy(
+            editingPlaceId = place.id,
+            editTitle = place.title,
+            editCity = place.city,
+            editStreet = place.street,
+            editHouse = place.house,
+            editError = null
+        )
+    }
+
+    fun cancelEditing() {
+        _state.value = _state.value.copy(editingPlaceId = null, editError = null)
+    }
+
+    fun onEditTitleChange(value: String) {
+        _state.update { it.copy(editTitle = value, editError = null) }
+    }
+
+    fun onEditCityChange(value: String) {
+        _state.update { it.copy(editCity = value, editError = null) }
+    }
+
+    fun onEditStreetChange(value: String) {
+        _state.update { it.copy(editStreet = value, editError = null) }
+    }
+
+    fun onEditHouseChange(value: String) {
+        _state.update { it.copy(editHouse = value, editError = null) }
+    }
+
+    fun saveEditedPlace() {
+        val current = _state.value
+        val id = current.editingPlaceId ?: return
+        val city = current.editCity.trim()
+        val street = current.editStreet.trim()
+
+        if (city.isBlank() && street.isBlank()) {
+            _state.value = current.copy(editError = "Заполните хотя бы город или улицу")
+            return
+        }
+
+        val title = current.editTitle.trim().ifBlank {
+            listOf(city, street, current.editHouse.trim())
+                .filter { it.isNotBlank() }
+                .joinToString(", ")
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updatePlace(
+                TrackedPlace(
+                    id = id,
+                    title = title,
+                    city = city,
+                    street = street,
+                    house = current.editHouse.trim(),
+                    isEnabled = true
+                )
+            )
+            _state.update { it.copy(editingPlaceId = null) }
+        }
+    }
+
+    fun togglePlaceEnabled(place: TrackedPlace, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updatePlace(place.copy(isEnabled = enabled))
         }
     }
 }

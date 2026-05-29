@@ -83,12 +83,14 @@ class AllOutagesViewModel(
                             trackedPlaceRepository.observePlaces(),
                             settingsRepository.onlyTrackedPlacesFlow
                         ) { outages, places, onlyTracked ->
-                            val placesForFilter = if (onlyTracked) places else emptyList()
+                            val placesForFilter = if (onlyTracked) places.filter { it.isEnabled } else emptyList()
                             val filtered = TrackedPlaceMatcher.filter(outages, placesForFilter)
 
-                            val emptyMessage = if (onlyTracked && places.isEmpty()) {
-                                "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
-                            } else null
+                            val emptyMessage = when {
+                                onlyTracked && places.isEmpty() -> "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
+                                onlyTracked && places.none { it.isEnabled } -> "Нет активных отслеживаемых мест. Включите их в разделе «Места»."
+                                else -> null
+                            }
 
                             AllOutagesState(
                                 isLoading = false,

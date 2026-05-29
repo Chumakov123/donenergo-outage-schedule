@@ -9,7 +9,8 @@ fun TrackedPlaceEntity.toDomain(): TrackedPlace {
         title = title,
         city = city,
         street = street,
-        house = house
+        house = house,
+        isEnabled = isEnabled
     )
 }
 
@@ -19,6 +20,7 @@ fun TrackedPlace.toEntity(): TrackedPlaceEntity {
         title = title.trim(),
         city = city.trim(),
         street = street.trim(),
-        house = house.trim()
+        house = house.trim(),
+        isEnabled = isEnabled
     )
 }

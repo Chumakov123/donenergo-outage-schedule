@@ -20,6 +20,10 @@ class RoomTrackedPlaceRepository(
         return dao.insert(place.toEntity())
     }
 
+    override suspend fun updatePlace(place: TrackedPlace) {
+        dao.update(place.toEntity())
+    }
+
     override suspend fun deletePlace(id: Long) {
         dao.deleteById(id)
     }
