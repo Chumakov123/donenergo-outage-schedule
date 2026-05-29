@@ -12,13 +12,13 @@ object OutageSyncScheduler {
 
     private const val UNIQUE_WORK_NAME = "outage_sync_work"
 
-    fun schedule(context: Context) {
+    fun schedule(context: Context, repeatHours: Long) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
         val request = PeriodicWorkRequestBuilder<OutageSyncWorker>(
-            6,
+            repeatHours,
             TimeUnit.HOURS
         )
             .setConstraints(constraints)
@@ -26,7 +26,7 @@ object OutageSyncScheduler {
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             UNIQUE_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE,
             request
         )
     }

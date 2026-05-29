@@ -27,6 +27,11 @@ class DataStoreAppSettingsRepository(
             prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] ?: false
         }
 
+    override val outageSyncIntervalHoursFlow: Flow<Int> =
+        context.dataStore.data.map { prefs ->
+            prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] ?: 6
+        }
+
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.ONBOARDING_COMPLETED] = completed
@@ -42,6 +47,12 @@ class DataStoreAppSettingsRepository(
     override suspend fun setOnlyTrackedPlaces(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] = enabled
+        }
+    }
+
+    override suspend fun setOutageSyncIntervalHours(hours: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] = hours
         }
     }
 }

@@ -21,15 +21,48 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
-
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
-
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
+            item {
+                Text(
+                    text = "Интервал обновления",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            item {
+                listOf(6, 12, 24).forEach { hours ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setSyncInterval(hours) }
+                            .padding(vertical = Spacing.Small)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "${hours} часов",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = if (state.syncIntervalHours == hours) {
+                                    "Выбрано"
+                                } else {
+                                    "Нажмите, чтобы выбрать"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
 
             item {
                 Text(
@@ -47,29 +80,17 @@ fun SettingsScreen(
             }
 
             items(state.branches) { branch ->
-
-                val selected =
-                    state.selectedUrls.contains(branch.url)
-
-                val suggestions =
-                    state.citySuggestionsByBranchUrl[branch.url]
-                        .orEmpty()
+                val selected = state.selectedUrls.contains(branch.url)
+                val suggestions = state.citySuggestionsByBranchUrl[branch.url].orEmpty()
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            viewModel.toggle(branch)
-                        }
+                        .clickable { viewModel.toggle(branch) }
                         .padding(vertical = Spacing.Small)
                 ) {
-
                     Text(
-                        text = if (selected) {
-                            "✓ ${branch.name}"
-                        } else {
-                            branch.name
-                        },
+                        text = if (selected) "✓ ${branch.name}" else branch.name,
                         style = MaterialTheme.typography.bodyLarge
                     )
 

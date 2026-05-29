@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 data class SettingsState(
     val branches: List<Branch> = emptyList(),
     val selectedUrls: Set<String> = emptySet(),
-    val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap()
+    val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
+    val syncIntervalHours: Int = 6
 )
 
 class SettingsViewModel(
@@ -34,13 +35,13 @@ class SettingsViewModel(
 
     private fun load() {
         viewModelScope.launch(Dispatchers.IO) {
-
             val branches = branchRepository.getBranches()
 
             combine(
                 settingsRepository.selectedBranchUrlsFlow,
+                settingsRepository.outageSyncIntervalHoursFlow,
                 localityRepository.observeLocalities()
-            ) { urls, localities ->
+            ) { urls, intervalHours, localities ->
 
                 val cities = localities
                     .groupBy { it.branchUrl }
@@ -56,7 +57,8 @@ class SettingsViewModel(
                 SettingsState(
                     branches = branches,
                     selectedUrls = urls,
-                    citySuggestionsByBranchUrl = cities
+                    citySuggestionsByBranchUrl = cities,
+                    syncIntervalHours = intervalHours
                 )
             }.collectLatest {
                 _state.value = it
@@ -66,22 +68,22 @@ class SettingsViewModel(
 
     fun toggle(branch: Branch) {
         viewModelScope.launch(Dispatchers.IO) {
-
             val current = _state.value.selectedUrls.toMutableSet()
 
             if (current.contains(branch.url)) {
-
-                if (current.size == 1) {
-                    return@launch
-                }
-
+                if (current.size == 1) return@launch
                 current.remove(branch.url)
-
             } else {
                 current.add(branch.url)
             }
 
             settingsRepository.setSelectedBranchUrls(current)
+        }
+    }
+
+    fun setSyncInterval(hours: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.setOutageSyncIntervalHours(hours)
         }
     }
 }

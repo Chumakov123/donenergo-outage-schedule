@@ -18,8 +18,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.chumakov123.outageschedule.data.work.InitialDataSyncScheduler
 import com.chumakov123.outageschedule.data.work.OutageSyncScheduler
+import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun AppScaffold(
@@ -28,13 +30,16 @@ fun AppScaffold(
     val entryState by viewModel.state.collectAsState()
     val navController = rememberNavController()
     val context = LocalContext.current
+    val settingsRepository: AppSettingsRepository = koinInject()
 
-    LaunchedEffect(entryState.isLoading, entryState.isOnboardingCompleted) {
-        if (!entryState.isLoading && entryState.isOnboardingCompleted) {
-            OutageSyncScheduler.schedule(context)
-        }
+    val syncIntervalHours by settingsRepository.outageSyncIntervalHoursFlow.collectAsState(initial = 6)
 
-        if (!entryState.isLoading && !entryState.isOnboardingCompleted) {
+    LaunchedEffect(entryState.isLoading, entryState.isOnboardingCompleted, syncIntervalHours) {
+        if (entryState.isLoading) return@LaunchedEffect
+
+        if (entryState.isOnboardingCompleted) {
+            OutageSyncScheduler.schedule(context, syncIntervalHours.toLong())
+        } else {
             InitialDataSyncScheduler.schedule(context)
         }
     }
@@ -67,9 +72,7 @@ fun AppScaffold(
                             selected = selected,
                             onClick = {
                                 navController.navigate(item.route) {
-                                    popUpTo(
-                                        navController.graph.findStartDestination().id
-                                    ) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
                                     launchSingleTop = true
@@ -82,9 +85,7 @@ fun AppScaffold(
                                     contentDescription = item.title
                                 )
                             },
-                            label = {
-                                Text(item.title)
-                            }
+                            label = { Text(item.title) }
                         )
                     }
                 }
