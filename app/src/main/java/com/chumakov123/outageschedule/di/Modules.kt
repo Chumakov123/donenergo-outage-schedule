@@ -9,8 +9,10 @@ import com.chumakov123.outageschedule.data.remote.parser.OutageHtmlParser
 import com.chumakov123.outageschedule.data.repository.DataStoreAppSettingsRepository
 import com.chumakov123.outageschedule.data.repository.DonEnergoBranchRepository
 import com.chumakov123.outageschedule.data.repository.DonEnergoOutageRepository
+import com.chumakov123.outageschedule.data.repository.RoomBranchLocalityRepository
 import com.chumakov123.outageschedule.data.repository.RoomTrackedPlaceRepository
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
+import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
@@ -51,6 +53,7 @@ val dataModule = module {
 
     single { get<AppDatabase>().outageDao() }
     single { get<AppDatabase>().trackedPlaceDao() }
+    single { get<AppDatabase>().branchLocalityDao() }
 
     single<OutageRepository> {
         DonEnergoOutageRepository(
@@ -63,6 +66,12 @@ val dataModule = module {
 
     single<TrackedPlaceRepository> {
         RoomTrackedPlaceRepository(
+            dao = get()
+        )
+    }
+
+    single<BranchLocalityRepository> {
+        RoomBranchLocalityRepository(
             dao = get()
         )
     }

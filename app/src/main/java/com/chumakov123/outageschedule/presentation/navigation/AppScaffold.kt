@@ -16,6 +16,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.chumakov123.outageschedule.data.work.InitialDataSyncScheduler
 import com.chumakov123.outageschedule.data.work.OutageSyncScheduler
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import org.koin.androidx.compose.koinViewModel
@@ -28,9 +29,13 @@ fun AppScaffold(
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    LaunchedEffect(entryState.isOnboardingCompleted) {
-        if (entryState.isOnboardingCompleted) {
+    LaunchedEffect(entryState.isLoading, entryState.isOnboardingCompleted) {
+        if (!entryState.isLoading && entryState.isOnboardingCompleted) {
             OutageSyncScheduler.schedule(context)
+        }
+
+        if (!entryState.isLoading && !entryState.isOnboardingCompleted) {
+            InitialDataSyncScheduler.schedule(context)
         }
     }
 

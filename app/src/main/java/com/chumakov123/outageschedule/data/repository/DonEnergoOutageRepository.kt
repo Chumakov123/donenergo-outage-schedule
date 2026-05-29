@@ -1,6 +1,7 @@
 package com.chumakov123.outageschedule.data.repository
 
 import androidx.room.withTransaction
+import com.chumakov123.outageschedule.data.local.dao.BranchLocalityDao
 import com.chumakov123.outageschedule.data.local.dao.OutageDao
 import com.chumakov123.outageschedule.data.local.database.AppDatabase
 import com.chumakov123.outageschedule.data.local.mapper.toDomain
@@ -11,6 +12,7 @@ import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
+import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -26,6 +28,7 @@ class DonEnergoOutageRepository(
     private val database: AppDatabase
 ) : OutageRepository {
 
+    private val localityDao: BranchLocalityDao = database.branchLocalityDao()
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault())
 
     override suspend fun fetchOutages(branchUrl: String): List<Outage> {
@@ -43,7 +46,13 @@ class DonEnergoOutageRepository(
                     outage.copy(status = calculateStatus(outage))
                 }
 
+                val cities = outages
+                    .map { it.city.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+
                 dao.deleteCurrentByBranchUrl(branch.url)
+                localityDao.deleteByBranchUrl(branch.url)
 
                 dao.insertAll(
                     outages.map { outage ->
@@ -51,6 +60,19 @@ class DonEnergoOutageRepository(
                             branchUrl = branch.url,
                             branchName = branch.name,
                             fetchedAt = now
+                        )
+                    }
+                )
+
+                localityDao.insertAll(
+                    cities.map { city ->
+                        com.chumakov123.outageschedule.data.local.entity.BranchLocalityEntity(
+                            id = "${branch.url}|${AddressNormalizer.compact(city)}",
+                            branchUrl = branch.url,
+                            branchName = branch.name,
+                            city = city,
+                            normalizedCity = AddressNormalizer.compact(city),
+                            lastSeenAt = now
                         )
                     }
                 )
