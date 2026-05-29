@@ -8,19 +8,29 @@ fun BranchLocalityEntity.toDomain(): BranchLocality {
     return BranchLocality(
         branchUrl = branchUrl,
         branchName = branchName,
-        city = city
+        city = city,
+        street = street
     )
 }
 
 fun BranchLocality.toEntity(lastSeenAt: Long): BranchLocalityEntity {
-    val normalized = AddressNormalizer.compact(city)
+    val normalizedCity = AddressNormalizer.compact(city)
+    val normalizedStreet = street?.let { AddressNormalizer.compact(it) }
 
     return BranchLocalityEntity(
-        id = "$branchUrl|$normalized",
+        id = buildString {
+            append(branchUrl)
+            append("|")
+            append(normalizedCity)
+            append("|")
+            append(normalizedStreet.orEmpty())
+        },
         branchUrl = branchUrl,
         branchName = branchName,
         city = city.trim(),
-        normalizedCity = normalized,
+        street = street?.trim()?.takeIf { it.isNotBlank() },
+        normalizedCity = normalizedCity,
+        normalizedStreet = normalizedStreet,
         lastSeenAt = lastSeenAt
     )
 }

@@ -18,12 +18,15 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
+
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
+
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
+
             Text(
                 text = "Филиалы",
                 style = MaterialTheme.typography.headlineSmall
@@ -36,16 +39,40 @@ fun SettingsScreen(
             )
 
             state.branches.forEach { branch ->
+
                 val selected = state.selectedUrls.contains(branch.url)
 
-                Text(
-                    text = if (selected) "✓ ${branch.name}" else branch.name,
+                val suggestions =
+                    state.citySuggestionsByBranchUrl[branch.url].orEmpty()
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.toggle(branch) }
-                        .padding(vertical = Spacing.Small),
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                        .clickable {
+                            viewModel.toggle(branch)
+                        }
+                        .padding(vertical = Spacing.Small)
+                ) {
+
+                    Text(
+                        text = if (selected) {
+                            "✓ ${branch.name}"
+                        } else {
+                            branch.name
+                        },
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
+                    Text(
+                        text = if (suggestions.isEmpty()) {
+                            "Подсказки загружаются..."
+                        } else {
+                            suggestions.joinToString(" • ")
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.chumakov123.outageschedule.data.local.dao.BranchLocalityDao
 import com.chumakov123.outageschedule.data.local.dao.OutageDao
 import com.chumakov123.outageschedule.data.local.database.AppDatabase
+import com.chumakov123.outageschedule.data.local.entity.BranchLocalityEntity
 import com.chumakov123.outageschedule.data.local.mapper.toDomain
 import com.chumakov123.outageschedule.data.local.mapper.toEntity
 import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSource
@@ -13,6 +14,7 @@ import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
+import com.chumakov123.outageschedule.domain.trackedplace.AddressSegmentParser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -46,10 +48,7 @@ class DonEnergoOutageRepository(
                     outage.copy(status = calculateStatus(outage))
                 }
 
-                val cities = outages
-                    .map { it.city.trim() }
-                    .filter { it.isNotBlank() }
-                    .distinct()
+                val localities = buildLocalityIndex(branch, outages, now)
 
                 dao.deleteCurrentByBranchUrl(branch.url)
                 localityDao.deleteByBranchUrl(branch.url)
@@ -64,39 +63,71 @@ class DonEnergoOutageRepository(
                     }
                 )
 
-                localityDao.insertAll(
-                    cities.map { city ->
-                        com.chumakov123.outageschedule.data.local.entity.BranchLocalityEntity(
-                            id = "${branch.url}|${AddressNormalizer.compact(city)}",
-                            branchUrl = branch.url,
-                            branchName = branch.name,
-                            city = city,
-                            normalizedCity = AddressNormalizer.compact(city),
-                            lastSeenAt = now
-                        )
-                    }
-                )
+                localityDao.insertAll(localities)
             }
         }
     }
 
     override fun observeOutages(branchUrls: Set<String>): Flow<List<Outage>> {
         if (branchUrls.isEmpty()) return flowOf(emptyList())
-
-        return dao.observeOutages(branchUrls.toList())
-            .map { list -> list.map { it.toDomain() } }
+        return dao.observeOutages(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
     }
 
     override fun observeHistory(branchUrls: Set<String>): Flow<List<Outage>> {
         if (branchUrls.isEmpty()) return flowOf(emptyList())
+        return dao.observeHistory(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
+    }
 
-        return dao.observeHistory(branchUrls.toList())
-            .map { list -> list.map { it.toDomain() } }
+    private fun buildLocalityIndex(
+        branch: Branch,
+        outages: List<Outage>,
+        now: Long
+    ): List<BranchLocalityEntity> {
+        val result = linkedMapOf<String, BranchLocalityEntity>()
+
+        fun add(city: String, street: String?) {
+            val cleanCity = city.trim()
+            if (cleanCity.isBlank()) return
+
+            val cleanStreet = street?.trim()?.takeIf { it.isNotBlank() }
+            val key = buildString {
+                append(branch.url)
+                append("|")
+                append(AddressNormalizer.compact(cleanCity))
+                append("|")
+                append(AddressNormalizer.compact(cleanStreet.orEmpty()))
+            }
+
+            if (result.containsKey(key)) return
+
+            result[key] = BranchLocalityEntity(
+                id = key,
+                branchUrl = branch.url,
+                branchName = branch.name,
+                city = cleanCity,
+                street = cleanStreet,
+                normalizedCity = AddressNormalizer.compact(cleanCity),
+                normalizedStreet = cleanStreet?.let { AddressNormalizer.compact(it) },
+                lastSeenAt = now
+            )
+        }
+
+        outages.forEach { outage ->
+            add(outage.city, null)
+
+            AddressSegmentParser.splitCandidates(outage.address).forEach { segment ->
+                val street = segment.streetText.trim()
+                if (street.isNotBlank()) {
+                    add(outage.city, street)
+                }
+            }
+        }
+
+        return result.values.toList()
     }
 
     private fun calculateStatus(outage: Outage): OutageStatus {
         val now = LocalDateTime.now()
-
         val start = parseDateTime(outage.startDate, outage.startTime)
         val end = parseDateTime(outage.endDate, outage.endTime)
 
@@ -111,9 +142,6 @@ class DonEnergoOutageRepository(
     private fun parseDateTime(date: String?, time: String?): LocalDateTime? {
         val d = date?.takeIf { it.isNotBlank() } ?: return null
         val t = time?.takeIf { it.isNotBlank() } ?: return null
-
-        return runCatching {
-            LocalDateTime.parse("$d $t", formatter)
-        }.getOrNull()
+        return runCatching { LocalDateTime.parse("$d $t", formatter) }.getOrNull()
     }
 }

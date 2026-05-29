@@ -10,12 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BranchLocalityDao {
 
-    @Query(
-        """
-        SELECT * FROM branch_localities
-        ORDER BY branchName, city
-        """
-    )
+    @Query("SELECT * FROM branch_localities ORDER BY branchName, city, street")
     fun observeAll(): Flow<List<BranchLocalityEntity>>
 
     @Query("DELETE FROM branch_localities WHERE branchUrl = :branchUrl")

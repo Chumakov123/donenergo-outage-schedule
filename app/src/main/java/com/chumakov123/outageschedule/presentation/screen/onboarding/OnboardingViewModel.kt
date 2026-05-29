@@ -19,7 +19,8 @@ import kotlinx.coroutines.withContext
 data class OnboardingState(
     val branches: List<Branch> = emptyList(),
     val selectedUrls: Set<String> = emptySet(),
-    val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap()
+    val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
+    val streetSuggestionsByBranchUrl: Map<String, List<String>> = emptyMap()
 )
 
 class OnboardingViewModel(
@@ -56,7 +57,7 @@ class OnboardingViewModel(
     private fun observeLocalities() {
         viewModelScope.launch(Dispatchers.IO) {
             localityRepository.observeLocalities().collectLatest { localities ->
-                val suggestions = localities
+                val cities = localities
                     .groupBy { it.branchUrl }
                     .mapValues { (_, items) ->
                         items.asSequence()
@@ -67,13 +68,26 @@ class OnboardingViewModel(
                             .toList()
                     }
 
+                val streets = localities
+                    .groupBy { it.branchUrl }
+                    .mapValues { (_, items) ->
+                        items.asSequence()
+                            .mapNotNull { it.street?.trim() }
+                            .filter { it.isNotBlank() }
+                            .distinct()
+                            .take(3)
+                            .toList()
+                    }
+
                 _state.update {
-                    it.copy(citySuggestionsByBranchUrl = suggestions)
+                    it.copy(
+                        citySuggestionsByBranchUrl = cities,
+                        streetSuggestionsByBranchUrl = streets
+                    )
                 }
             }
         }
     }
-
     fun toggle(branch: Branch) {
         val current = _state.value.selectedUrls.toMutableSet()
 

@@ -1,5 +1,6 @@
 package com.chumakov123.outageschedule.presentation.screen.trackedplaces
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +37,7 @@ fun TrackedPlacesScreen(
             )
 
             Text(
-                text = "Можно оставить только первое или только второе поле",
+                text = "Подсказки берутся из уже загруженных данных по выбранным филиалам.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -55,12 +56,48 @@ fun TrackedPlacesScreen(
                 label = { Text("Населённый пункт или район") }
             )
 
+            if (state.citySuggestions.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                ) {
+                    state.citySuggestions.forEach { suggestion ->
+                        Text(
+                            text = suggestion,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onCitySuggestionClick(suggestion) }
+                                .padding(vertical = Spacing.Small),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = state.street,
                 onValueChange = viewModel::onStreetChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Улица, СНТ, объект") }
             )
+
+            if (state.streetSuggestions.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                ) {
+                    state.streetSuggestions.forEach { suggestion ->
+                        Text(
+                            text = suggestion,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onStreetSuggestionClick(suggestion) }
+                                .padding(vertical = Spacing.Small),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = state.house,

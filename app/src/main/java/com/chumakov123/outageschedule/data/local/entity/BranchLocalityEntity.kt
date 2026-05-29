@@ -10,6 +10,8 @@ data class BranchLocalityEntity(
     val branchUrl: String,
     val branchName: String,
     val city: String,
+    val street: String?,
     val normalizedCity: String,
+    val normalizedStreet: String?,
     val lastSeenAt: Long
 )

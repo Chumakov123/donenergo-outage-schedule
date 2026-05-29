@@ -4,20 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
+import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class SettingsState(
     val branches: List<Branch> = emptyList(),
-    val selectedUrls: Set<String> = emptySet()
+    val selectedUrls: Set<String> = emptySet(),
+    val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap()
 )
 
 class SettingsViewModel(
     private val branchRepository: BranchRepository,
+    private val localityRepository: BranchLocalityRepository,
     private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
@@ -30,24 +34,49 @@ class SettingsViewModel(
 
     private fun load() {
         viewModelScope.launch(Dispatchers.IO) {
+
             val branches = branchRepository.getBranches()
 
-            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
-                _state.value = SettingsState(
+            combine(
+                settingsRepository.selectedBranchUrlsFlow,
+                localityRepository.observeLocalities()
+            ) { urls, localities ->
+
+                val cities = localities
+                    .groupBy { it.branchUrl }
+                    .mapValues { (_, items) ->
+                        items.asSequence()
+                            .map { it.city.trim() }
+                            .filter { it.isNotBlank() }
+                            .distinct()
+                            .take(3)
+                            .toList()
+                    }
+
+                SettingsState(
                     branches = branches,
-                    selectedUrls = urls
+                    selectedUrls = urls,
+                    citySuggestionsByBranchUrl = cities
                 )
+            }.collectLatest {
+                _state.value = it
             }
         }
     }
 
     fun toggle(branch: Branch) {
         viewModelScope.launch(Dispatchers.IO) {
+
             val current = _state.value.selectedUrls.toMutableSet()
 
             if (current.contains(branch.url)) {
-                if (current.size == 1) return@launch
+
+                if (current.size == 1) {
+                    return@launch
+                }
+
                 current.remove(branch.url)
+
             } else {
                 current.add(branch.url)
             }
