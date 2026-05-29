@@ -22,6 +22,11 @@ class DataStoreAppSettingsRepository(
             prefs[AppSettingsKeys.SELECTED_BRANCH_URLS] ?: emptySet()
         }
 
+    override val onlyTrackedPlacesFlow: Flow<Boolean> =
+        context.dataStore.data.map { prefs ->
+            prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] ?: false
+        }
+
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.ONBOARDING_COMPLETED] = completed
@@ -31,6 +36,12 @@ class DataStoreAppSettingsRepository(
     override suspend fun setSelectedBranchUrls(urls: Set<String>) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.SELECTED_BRANCH_URLS] = urls
+        }
+    }
+
+    override suspend fun setOnlyTrackedPlaces(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] = enabled
         }
     }
 }

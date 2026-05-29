@@ -22,7 +22,9 @@ import kotlinx.coroutines.launch
 data class AllOutagesState(
     val isLoading: Boolean = true,
     val outages: List<Outage> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val onlyTrackedPlaces: Boolean = false,
+    val emptyFilterMessage: String? = null
 )
 
 class AllOutagesViewModel(
@@ -78,13 +80,22 @@ class AllOutagesViewModel(
                     } else {
                         combine(
                             outageRepository.observeOutages(urls),
-                            trackedPlaceRepository.observePlaces()
-                        ) { outages, places ->
-                            val filtered = TrackedPlaceMatcher.filter(outages, places)
+                            trackedPlaceRepository.observePlaces(),
+                            settingsRepository.onlyTrackedPlacesFlow
+                        ) { outages, places, onlyTracked ->
+                            val placesForFilter = if (onlyTracked) places else emptyList()
+                            val filtered = TrackedPlaceMatcher.filter(outages, placesForFilter)
+
+                            val emptyMessage = if (onlyTracked && places.isEmpty()) {
+                                "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
+                            } else null
+
                             AllOutagesState(
                                 isLoading = false,
                                 outages = filtered,
-                                error = null
+                                error = null,
+                                onlyTrackedPlaces = onlyTracked,
+                                emptyFilterMessage = emptyMessage
                             )
                         }
                     }
@@ -92,6 +103,12 @@ class AllOutagesViewModel(
                 .collectLatest { newState ->
                     _state.value = newState
                 }
+        }
+    }
+
+    fun toggleFilter(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.setOnlyTrackedPlaces(enabled)
         }
     }
 }

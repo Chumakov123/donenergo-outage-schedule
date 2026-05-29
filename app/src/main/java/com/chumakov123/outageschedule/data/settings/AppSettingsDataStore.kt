@@ -10,4 +10,5 @@ val Context.dataStore by preferencesDataStore(name = "app_settings")
 object AppSettingsKeys {
     val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     val SELECTED_BRANCH_URLS = stringSetPreferencesKey("selected_branch_urls")
+    val FILTER_ONLY_TRACKED_PLACES = booleanPreferencesKey("filter_only_tracked_places")
 }
