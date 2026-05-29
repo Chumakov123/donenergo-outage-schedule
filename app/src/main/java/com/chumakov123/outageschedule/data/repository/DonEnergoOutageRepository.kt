@@ -15,6 +15,8 @@ import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
 import com.chumakov123.outageschedule.domain.trackedplace.AddressSegmentParser
+import com.chumakov123.outageschedule.domain.util.OutageDateTimeParser
+import com.chumakov123.outageschedule.domain.util.OutageStatusCalculator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -31,7 +33,6 @@ class DonEnergoOutageRepository(
 ) : OutageRepository {
 
     private val localityDao: BranchLocalityDao = database.branchLocalityDao()
-    private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault())
 
     override suspend fun fetchOutages(branchUrl: String): List<Outage> {
         val html = remote.fetchHtml(branchUrl)
@@ -40,15 +41,18 @@ class DonEnergoOutageRepository(
     }
 
     override suspend fun refreshOutages(branches: List<Branch>) {
-        val now = System.currentTimeMillis()
-
         database.withTransaction {
             for (branch in branches) {
+                val nowMillis = System.currentTimeMillis()
+                val nowDateTime = LocalDateTime.now()
+
                 val outages = fetchOutages(branch.url).map { outage ->
-                    outage.copy(status = calculateStatus(outage))
+                    val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime)
+                    val end = OutageDateTimeParser.parse(outage.endDate, outage.endTime)
+                    outage.copy(status = OutageStatusCalculator.calculate(nowDateTime, start, end))
                 }
 
-                val localities = buildLocalityIndex(branch, outages, now)
+                val localities = buildLocalityIndex(branch, outages, nowMillis)
 
                 dao.deleteCurrentByBranchUrl(branch.url)
                 localityDao.deleteByBranchUrl(branch.url)
@@ -58,7 +62,7 @@ class DonEnergoOutageRepository(
                         outage.toEntity(
                             branchUrl = branch.url,
                             branchName = branch.name,
-                            fetchedAt = now
+                            fetchedAt = nowMillis
                         )
                     }
                 )
@@ -124,24 +128,5 @@ class DonEnergoOutageRepository(
         }
 
         return result.values.toList()
-    }
-
-    private fun calculateStatus(outage: Outage): OutageStatus {
-        val now = LocalDateTime.now()
-        val start = parseDateTime(outage.startDate, outage.startTime)
-        val end = parseDateTime(outage.endDate, outage.endTime)
-
-        return when {
-            end != null && now.isAfter(end) -> OutageStatus.FINISHED
-            start != null && now.isBefore(start) -> OutageStatus.UPCOMING
-            start != null || end != null -> OutageStatus.ACTIVE
-            else -> OutageStatus.UPCOMING
-        }
-    }
-
-    private fun parseDateTime(date: String?, time: String?): LocalDateTime? {
-        val d = date?.takeIf { it.isNotBlank() } ?: return null
-        val t = time?.takeIf { it.isNotBlank() } ?: return null
-        return runCatching { LocalDateTime.parse("$d $t", formatter) }.getOrNull()
     }
 }
