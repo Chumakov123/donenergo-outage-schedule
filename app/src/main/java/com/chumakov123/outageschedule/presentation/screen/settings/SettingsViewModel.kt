@@ -17,7 +17,8 @@ data class SettingsState(
     val branches: List<Branch> = emptyList(),
     val selectedUrls: Set<String> = emptySet(),
     val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
-    val syncIntervalHours: Int = 6
+    val syncIntervalHours: Int = 6,
+    val notificationLeadHours: Set<Int> = setOf(24)
 )
 
 class SettingsViewModel(
@@ -40,8 +41,9 @@ class SettingsViewModel(
             combine(
                 settingsRepository.selectedBranchUrlsFlow,
                 settingsRepository.outageSyncIntervalHoursFlow,
+                settingsRepository.notificationLeadHoursFlow,
                 localityRepository.observeLocalities()
-            ) { urls, intervalHours, localities ->
+            ) { urls, intervalHours, leadHours, localities ->
 
                 val cities = localities
                     .groupBy { it.branchUrl }
@@ -58,7 +60,8 @@ class SettingsViewModel(
                     branches = branches,
                     selectedUrls = urls,
                     citySuggestionsByBranchUrl = cities,
-                    syncIntervalHours = intervalHours
+                    syncIntervalHours = intervalHours,
+                    notificationLeadHours = leadHours
                 )
             }.collectLatest {
                 _state.value = it
@@ -84,6 +87,21 @@ class SettingsViewModel(
     fun setSyncInterval(hours: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.setOutageSyncIntervalHours(hours)
+        }
+    }
+
+    fun toggleNotificationLeadHour(hours: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = _state.value.notificationLeadHours.toMutableSet()
+
+            if (current.contains(hours)) {
+                if (current.size == 1) return@launch
+                current.remove(hours)
+            } else {
+                current.add(hours)
+            }
+
+            settingsRepository.setNotificationLeadHours(current)
         }
     }
 }

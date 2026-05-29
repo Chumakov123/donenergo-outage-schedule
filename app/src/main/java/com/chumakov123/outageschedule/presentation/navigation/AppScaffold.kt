@@ -17,6 +17,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.chumakov123.outageschedule.data.work.InitialDataSyncScheduler
+import com.chumakov123.outageschedule.data.work.NotificationScheduler
 import com.chumakov123.outageschedule.data.work.OutageSyncScheduler
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
@@ -39,6 +40,7 @@ fun AppScaffold(
 
         if (entryState.isOnboardingCompleted) {
             OutageSyncScheduler.schedule(context, syncIntervalHours.toLong())
+            NotificationScheduler.schedule(context)
         } else {
             InitialDataSyncScheduler.schedule(context)
         }

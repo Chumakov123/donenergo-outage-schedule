@@ -13,4 +13,5 @@ object AppSettingsKeys {
     val SELECTED_BRANCH_URLS = stringSetPreferencesKey("selected_branch_urls")
     val FILTER_ONLY_TRACKED_PLACES = booleanPreferencesKey("filter_only_tracked_places")
     val OUTAGE_SYNC_INTERVAL_HOURS = intPreferencesKey("outage_sync_interval_hours")
+    val NOTIFICATION_LEAD_HOURS = stringSetPreferencesKey("notification_lead_hours")
 }

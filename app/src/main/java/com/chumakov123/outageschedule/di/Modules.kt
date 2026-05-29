@@ -10,10 +10,12 @@ import com.chumakov123.outageschedule.data.repository.DataStoreAppSettingsReposi
 import com.chumakov123.outageschedule.data.repository.DonEnergoBranchRepository
 import com.chumakov123.outageschedule.data.repository.DonEnergoOutageRepository
 import com.chumakov123.outageschedule.data.repository.RoomBranchLocalityRepository
+import com.chumakov123.outageschedule.data.repository.RoomNotificationLogRepository
 import com.chumakov123.outageschedule.data.repository.RoomTrackedPlaceRepository
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
+import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
@@ -47,13 +49,14 @@ val dataModule = module {
             AppDatabase::class.java,
             "outage_schedule.db"
         )
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration()
             .build()
     }
 
     single { get<AppDatabase>().outageDao() }
     single { get<AppDatabase>().trackedPlaceDao() }
     single { get<AppDatabase>().branchLocalityDao() }
+    single { get<AppDatabase>().sentNotificationDao() }
 
     single<OutageRepository> {
         DonEnergoOutageRepository(
@@ -72,6 +75,12 @@ val dataModule = module {
 
     single<BranchLocalityRepository> {
         RoomBranchLocalityRepository(
+            dao = get()
+        )
+    }
+
+    single<NotificationLogRepository> {
+        RoomNotificationLogRepository(
             dao = get()
         )
     }

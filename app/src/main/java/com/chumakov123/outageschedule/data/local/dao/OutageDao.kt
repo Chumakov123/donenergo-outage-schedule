@@ -32,6 +32,16 @@ interface OutageDao {
 
     @Query(
         """
+        SELECT * FROM outages
+        WHERE branchUrl IN (:branchUrls)
+          AND status = 'UPCOMING'
+        ORDER BY branchName, city, address
+        """
+    )
+    suspend fun getUpcomingOutages(branchUrls: List<String>): List<OutageEntity>
+
+    @Query(
+        """
         DELETE FROM outages
         WHERE branchUrl = :branchUrl
           AND status != 'FINISHED'

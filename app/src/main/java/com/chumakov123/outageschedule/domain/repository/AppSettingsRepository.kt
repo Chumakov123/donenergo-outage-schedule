@@ -12,6 +12,8 @@ interface AppSettingsRepository {
 
     val outageSyncIntervalHoursFlow: Flow<Int>
 
+    val notificationLeadHoursFlow: Flow<Set<Int>>
+
     suspend fun setOnboardingCompleted(completed: Boolean)
 
     suspend fun setSelectedBranchUrls(urls: Set<String>)
@@ -19,4 +21,6 @@ interface AppSettingsRepository {
     suspend fun setOnlyTrackedPlaces(enabled: Boolean)
 
     suspend fun setOutageSyncIntervalHours(hours: Int)
+
+    suspend fun setNotificationLeadHours(hours: Set<Int>)
 }

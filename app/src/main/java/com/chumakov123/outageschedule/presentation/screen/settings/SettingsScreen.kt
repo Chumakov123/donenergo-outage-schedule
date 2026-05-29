@@ -3,15 +3,18 @@ package com.chumakov123.outageschedule.presentation.screen.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.theme.Spacing
@@ -43,18 +46,63 @@ fun SettingsScreen(
                             .clickable { viewModel.setSyncInterval(hours) }
                             .padding(vertical = Spacing.Small)
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        Text(
+                            text = "$hours ч",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+
+                        Text(
+                            text = if (state.syncIntervalHours == hours) {
+                                "Выбрано"
+                            } else {
+                                "Нажмите, чтобы выбрать"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "Уведомления",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            item {
+                Text(
+                    text = "Выберите, за сколько времени предупреждать о предстоящем отключении",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            item {
+                listOf(12, 24, 48).forEach { hours ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.toggleNotificationLeadHour(hours) }
+                            .padding(vertical = Spacing.Small),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = state.notificationLeadHours.contains(hours),
+                            onCheckedChange = { viewModel.toggleNotificationLeadHour(hours) }
+                        )
+
+                        Column {
                             Text(
-                                text = "${hours} часов",
+                                text = "За $hours ч",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = if (state.syncIntervalHours == hours) {
-                                    "Выбрано"
+                                text = if (state.notificationLeadHours.contains(hours)) {
+                                    "Будет отправлено"
                                 } else {
-                                    "Нажмите, чтобы выбрать"
+                                    "Не будет отправляться"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant

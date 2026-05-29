@@ -32,6 +32,18 @@ class DataStoreAppSettingsRepository(
             prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] ?: 6
         }
 
+    override val notificationLeadHoursFlow: Flow<Set<Int>> =
+        context.dataStore.data.map { prefs ->
+            prefs[AppSettingsKeys.NOTIFICATION_LEAD_HOURS]?.mapNotNull { it.toIntOrNull() }?.toSet()
+                ?: emptySet()
+        }
+
+    override suspend fun setNotificationLeadHours(hours: Set<Int>) {
+        context.dataStore.edit { prefs ->
+            prefs[AppSettingsKeys.NOTIFICATION_LEAD_HOURS] = hours.map { it.toString() }.toSet()
+        }
+    }
+
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.ONBOARDING_COMPLETED] = completed
