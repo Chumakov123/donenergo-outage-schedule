@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,114 +29,144 @@ fun TrackedPlacesScreen(
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
-        Column(
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
-            Text(
-                text = "Отслеживаемые места",
-                style = MaterialTheme.typography.headlineSmall
-            )
 
-            Text(
-                text = "Подсказки берутся из уже загруженных данных по выбранным филиалам.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            OutlinedTextField(
-                value = state.title,
-                onValueChange = viewModel::onTitleChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Название") }
-            )
-
-            OutlinedTextField(
-                value = state.city,
-                onValueChange = viewModel::onCityChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Населённый пункт или район") }
-            )
-
-            if (state.citySuggestions.isNotEmpty()) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-                ) {
-                    state.citySuggestions.forEach { suggestion ->
-                        Text(
-                            text = suggestion,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.onCitySuggestionClick(suggestion) }
-                                .padding(vertical = Spacing.Small),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+            item {
+                Text(
+                    text = "Отслеживаемые места",
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
 
-            OutlinedTextField(
-                value = state.street,
-                onValueChange = viewModel::onStreetChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Улица, СНТ, объект") }
-            )
-
-            if (state.streetSuggestions.isNotEmpty()) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-                ) {
-                    state.streetSuggestions.forEach { suggestion ->
-                        Text(
-                            text = suggestion,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.onStreetSuggestionClick(suggestion) }
-                                .padding(vertical = Spacing.Small),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+            item {
+                Text(
+                    text = "Подсказки берутся из уже загруженных данных по выбранным филиалам.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            OutlinedTextField(
-                value = state.house,
-                onValueChange = viewModel::onHouseChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Дом, литера, дробь") }
-            )
-
-            if (state.error != null) {
-                Text(state.error)
+            item {
+                OutlinedTextField(
+                    value = state.title,
+                    onValueChange = viewModel::onTitleChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Название") }
+                )
             }
 
-            Button(onClick = viewModel::addPlace) {
-                Text("Добавить")
+            item {
+                OutlinedTextField(
+                    value = state.city,
+                    onValueChange = viewModel::onCityChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Населённый пункт или район") }
+                )
             }
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-            ) {
-                items(state.places) { place ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = Spacing.Small),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(place.title)
-                            Text(
-                                "${place.city}${if (place.city.isNotBlank() && place.street.isNotBlank()) ", " else ""}${place.street}${if (place.house.isNotBlank()) ", ${place.house}" else ""}"
+            items(state.citySuggestions) { suggestion ->
+                Text(
+                    text = suggestion,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.onCitySuggestionClick(
+                                suggestion
                             )
                         }
+                        .padding(vertical = Spacing.Small),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
-                        Button(onClick = { viewModel.deletePlace(place) }) {
-                            Text("Удалить")
+            item {
+                OutlinedTextField(
+                    value = state.street,
+                    onValueChange = viewModel::onStreetChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Улица, СНТ, объект") }
+                )
+            }
+
+            items(state.streetSuggestions) { suggestion ->
+                Text(
+                    text = suggestion,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.onStreetSuggestionClick(
+                                suggestion
+                            )
                         }
+                        .padding(vertical = Spacing.Small),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = state.house,
+                    onValueChange = viewModel::onHouseChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Дом, литера, дробь") }
+                )
+            }
+
+            if (state.error != null) {
+                item {
+                    Text(state.error)
+                }
+            }
+
+            item {
+                Button(
+                    onClick = viewModel::addPlace,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Добавить")
+                }
+            }
+
+            item {
+                HorizontalDivider(
+                    Modifier,
+                    DividerDefaults.Thickness,
+                    DividerDefaults.color
+                )
+            }
+
+            items(state.places) { place ->
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = Spacing.Small),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+
+                        Text(place.title)
+
+                        Text(
+                            "${place.city}${if (place.city.isNotBlank() && place.street.isNotBlank()) ", " else ""}${place.street}${if (place.house.isNotBlank()) ", ${place.house}" else ""}"
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.deletePlace(place)
+                        }
+                    ) {
+                        Text("Удалить")
                     }
                 }
             }

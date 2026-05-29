@@ -3,8 +3,11 @@ package com.chumakov123.outageschedule.presentation.screen.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,27 +26,34 @@ fun SettingsScreen(
 
     ScreenContainer {
 
-        Column(
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
 
-            Text(
-                text = "Филиалы",
-                style = MaterialTheme.typography.headlineSmall
-            )
+            item {
+                Text(
+                    text = "Филиалы",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-            Text(
-                text = "Минимум один филиал должен быть выбран",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            item {
+                Text(
+                    text = "Минимум один филиал должен быть выбран",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-            state.branches.forEach { branch ->
+            items(state.branches) { branch ->
 
-                val selected = state.selectedUrls.contains(branch.url)
+                val selected =
+                    state.selectedUrls.contains(branch.url)
 
                 val suggestions =
-                    state.citySuggestionsByBranchUrl[branch.url].orEmpty()
+                    state.citySuggestionsByBranchUrl[branch.url]
+                        .orEmpty()
 
                 Column(
                     modifier = Modifier
