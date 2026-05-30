@@ -4,13 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.chumakov123.outageschedule.data.notification.NotificationChannels
-import com.chumakov123.outageschedule.domain.model.Outage
+import com.chumakov123.outageschedule.domain.notification.OutageNotifier
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
 import com.chumakov123.outageschedule.domain.usecase.PrepareOutageNotificationsUseCase
@@ -26,6 +24,7 @@ class NotificationWorker(
     private val settingsRepository: AppSettingsRepository by inject()
     private val prepareUseCase: PrepareOutageNotificationsUseCase by inject()
     private val notificationLogRepository: NotificationLogRepository by inject()
+    private val outageNotifier: OutageNotifier by inject()
 
     override suspend fun doWork(): Result {
         return runCatching {
@@ -46,7 +45,7 @@ class NotificationWorker(
             val notifications = prepareUseCase.prepare(selectedUrls, leadHours)
 
             for (prep in notifications) {
-                showNotification(prep.outage, prep.leadHours)
+                outageNotifier.show(prep.outage, prep.leadHours)
                 notificationLogRepository.markSent(
                     key = prep.notificationKey,
                     outageId = prep.outage.buildId(),
@@ -58,45 +57,5 @@ class NotificationWorker(
         }.getOrElse {
             Result.retry()
         }
-    }
-
-    private fun showNotification(outage: Outage, leadHours: Int) {
-        val title = "Предстоящее отключение"
-        val city = outage.city.trim()
-        val address = outage.address.trim()
-        val text = if (city.isNotBlank()) {
-            "$city, $address. Через $leadHours ч."
-        } else {
-            "$address. Через $leadHours ч."
-        }
-
-        val notification = NotificationCompat.Builder(
-            applicationContext,
-            NotificationChannels.OUTAGE_ALERTS_CHANNEL_ID
-        )
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .build()
-
-        try {
-            NotificationManagerCompat.from(applicationContext)
-                .notify(buildNotificationId(outage, leadHours), notification)
-        } catch (_: SecurityException) { }
-    }
-
-    private fun buildNotificationId(outage: Outage, leadHours: Int): Int {
-        return listOf(
-            outage.city,
-            outage.address,
-            outage.startDate.orEmpty(),
-            outage.endDate.orEmpty(),
-            outage.startTime.orEmpty(),
-            outage.endTime.orEmpty(),
-            leadHours.toString()
-        ).joinToString("|").hashCode()
     }
 }

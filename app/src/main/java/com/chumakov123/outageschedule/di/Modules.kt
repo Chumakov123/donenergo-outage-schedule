@@ -2,6 +2,7 @@ package com.chumakov123.outageschedule.di
 
 import androidx.room.Room
 import com.chumakov123.outageschedule.data.local.database.AppDatabase
+import com.chumakov123.outageschedule.data.notification.AndroidOutageNotifier
 import com.chumakov123.outageschedule.data.remote.datasource.BranchRemoteDataSource
 import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSource
 import com.chumakov123.outageschedule.data.remote.parser.BranchIndexParser
@@ -12,6 +13,7 @@ import com.chumakov123.outageschedule.data.repository.DonEnergoOutageRepository
 import com.chumakov123.outageschedule.data.repository.RoomBranchLocalityRepository
 import com.chumakov123.outageschedule.data.repository.RoomNotificationLogRepository
 import com.chumakov123.outageschedule.data.repository.RoomTrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.notification.OutageNotifier
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
@@ -93,6 +95,8 @@ val dataModule = module {
             context = androidContext()
         )
     }
+
+    single<OutageNotifier> { AndroidOutageNotifier(androidContext()) }
 }
 
 val domainModule = module {
