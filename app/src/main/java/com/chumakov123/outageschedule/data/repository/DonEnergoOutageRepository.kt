@@ -16,9 +16,11 @@ import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
 import com.chumakov123.outageschedule.domain.trackedplace.AddressSegmentParser
 import com.chumakov123.outageschedule.domain.util.OutageDateTimeParser
 import com.chumakov123.outageschedule.domain.util.OutageStatusCalculator
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.jsoup.Jsoup
 import java.time.LocalDateTime
 
@@ -53,54 +55,60 @@ class DonEnergoOutageRepository(
         }
     }
 
-    override suspend fun refreshOutages(branches: List<Branch>) {
-        database.withTransaction {
-            for (branch in branches) {
-                val nowMillis = System.currentTimeMillis()
-                val nowDateTime = LocalDateTime.now()
+    override suspend fun refreshOutages(branches: List<Branch>) = coroutineScope {
+        for (branch in branches) {
+            launch {
+                try {
+                    val html = remote.fetchHtml(branch.url)
+                    val doc = Jsoup.parse(html)
+                    val parsedOutages = parser.parse(doc)
 
-                val html = remote.fetchHtml(branch.url)
-                val doc = Jsoup.parse(html)
-                val parsedOutages = parser.parse(doc)
+                    val nowMillis = System.currentTimeMillis()
+                    val nowDateTime = LocalDateTime.now()
 
-                val domainOutages = parsedOutages.mapNotNull { parsed ->
-                    if (parsed.startDate != null && parsed.endDate != null) {
-                        val outage = Outage(
-                            city = parsed.city,
-                            address = parsed.address,
-                            startDate = parsed.startDate,
-                            endDate = parsed.endDate,
-                            startTime = parsed.startTime,
-                            endTime = parsed.endTime,
-                            reason = parsed.reason,
-                            note = parsed.note,
-                            branchUrl = branch.url,
-                            branchName = branch.name
-                        )
-                        val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime)
-                        val end = OutageDateTimeParser.parse(outage.endDate, outage.endTime)
-                        outage.copy(status = OutageStatusCalculator.calculate(nowDateTime, start, end))
-                    } else {
-                        null
+                    val domainOutages = parsedOutages.mapNotNull { parsed ->
+                        if (parsed.startDate != null && parsed.endDate != null) {
+                            val outage = Outage(
+                                city = parsed.city,
+                                address = parsed.address,
+                                startDate = parsed.startDate,
+                                endDate = parsed.endDate,
+                                startTime = parsed.startTime,
+                                endTime = parsed.endTime,
+                                reason = parsed.reason,
+                                note = parsed.note,
+                                branchUrl = branch.url,
+                                branchName = branch.name
+                            )
+                            val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime)
+                            val end = OutageDateTimeParser.parse(outage.endDate, outage.endTime)
+                            outage.copy(status = OutageStatusCalculator.calculate(nowDateTime, start, end))
+                        } else {
+                            null
+                        }
                     }
+
+                    val localities = buildLocalityIndex(branch, parsedOutages, nowMillis)
+
+                    database.withTransaction {
+                        dao.deleteCurrentByBranchUrl(branch.url)
+                        localityDao.deleteByBranchUrl(branch.url)
+
+                        dao.insertAll(
+                            domainOutages.map { outage ->
+                                outage.toEntity(
+                                    branchUrl = branch.url,
+                                    branchName = branch.name,
+                                    fetchedAt = nowMillis
+                                )
+                            }
+                        )
+
+                        localityDao.insertAll(localities)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-
-                val localities = buildLocalityIndex(branch, parsedOutages, nowMillis)
-
-                dao.deleteCurrentByBranchUrl(branch.url)
-                localityDao.deleteByBranchUrl(branch.url)
-
-                dao.insertAll(
-                    domainOutages.map { outage ->
-                        outage.toEntity(
-                            branchUrl = branch.url,
-                            branchName = branch.name,
-                            fetchedAt = nowMillis
-                        )
-                    }
-                )
-
-                localityDao.insertAll(localities)
             }
         }
     }

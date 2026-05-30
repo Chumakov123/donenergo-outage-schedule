@@ -69,15 +69,3 @@ fun Outage.toEntity(
         fetchedAt = fetchedAt
     )
 }
-
-internal fun buildOutageId(outage: Outage): String {
-    return listOf(
-        outage.branchUrl,
-        outage.city,
-        outage.address,
-        outage.startDate,
-        outage.endDate,
-        outage.startTime.orEmpty(),
-        outage.endTime.orEmpty()
-    ).joinToString("|")
-}
