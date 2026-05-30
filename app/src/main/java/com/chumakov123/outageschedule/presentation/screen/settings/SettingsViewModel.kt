@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsState(
@@ -31,20 +31,39 @@ class SettingsViewModel(
     val state = _state.asStateFlow()
 
     init {
-        load()
+        loadBranches()
+        observeSettings()
+        observeLocalities()
     }
 
-    private fun load() {
+    private fun loadBranches() {
         viewModelScope.launch(Dispatchers.IO) {
             val branches = branchRepository.getBranches()
+            _state.update { it.copy(branches = branches) }
+        }
+    }
 
-            combine(
-                settingsRepository.selectedBranchUrlsFlow,
-                settingsRepository.outageSyncIntervalHoursFlow,
-                settingsRepository.notificationLeadHoursFlow,
-                localityRepository.observeLocalities()
-            ) { urls, intervalHours, leadHours, localities ->
+    private fun observeSettings() {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
+                _state.update { it.copy(selectedUrls = urls) }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.outageSyncIntervalHoursFlow.collectLatest { hours ->
+                _state.update { it.copy(syncIntervalHours = hours) }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.notificationLeadHoursFlow.collectLatest { hours ->
+                _state.update { it.copy(notificationLeadHours = hours) }
+            }
+        }
+    }
 
+    private fun observeLocalities() {
+        viewModelScope.launch(Dispatchers.IO) {
+            localityRepository.observeLocalities().collectLatest { localities ->
                 val cities = localities
                     .groupBy { it.branchUrl }
                     .mapValues { (_, items) ->
@@ -55,16 +74,7 @@ class SettingsViewModel(
                             .take(3)
                             .toList()
                     }
-
-                SettingsState(
-                    branches = branches,
-                    selectedUrls = urls,
-                    citySuggestionsByBranchUrl = cities,
-                    syncIntervalHours = intervalHours,
-                    notificationLeadHours = leadHours
-                )
-            }.collectLatest {
-                _state.value = it
+                _state.update { it.copy(citySuggestionsByBranchUrl = cities) }
             }
         }
     }
