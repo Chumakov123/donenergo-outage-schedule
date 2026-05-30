@@ -35,6 +35,7 @@ fun OutageEntity.toDomain(): Outage {
         reason = reason,
         note = note,
         branchName = branchName,
+        branchUrl = branchUrl,
         status = runCatching { OutageStatus.valueOf(status) }.getOrDefault(OutageStatus.UPCOMING)
     )
 }
@@ -67,4 +68,16 @@ fun Outage.toEntity(
         status = status.name,
         fetchedAt = fetchedAt
     )
+}
+
+internal fun buildOutageId(outage: Outage): String {
+    return listOf(
+        outage.branchUrl,
+        outage.city,
+        outage.address,
+        outage.startDate.orEmpty(),
+        outage.endDate.orEmpty(),
+        outage.startTime.orEmpty(),
+        outage.endTime.orEmpty()
+    ).joinToString("|")
 }

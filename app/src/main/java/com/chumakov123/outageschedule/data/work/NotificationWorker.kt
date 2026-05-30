@@ -9,21 +9,20 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.chumakov123.outageschedule.data.local.dao.OutageDao
-import com.chumakov123.outageschedule.data.local.entity.OutageEntity
+import com.chumakov123.outageschedule.data.local.mapper.buildOutageId
 import com.chumakov123.outageschedule.data.notification.NotificationChannels
 import com.chumakov123.outageschedule.domain.model.Outage
-import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
+import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.util.OutageDateTimeParser
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class NotificationWorker(
@@ -32,11 +31,9 @@ class NotificationWorker(
 ) : CoroutineWorker(context, params), KoinComponent {
 
     private val settingsRepository: AppSettingsRepository by inject()
-    private val outageDao: OutageDao by inject()
+    private val outageRepository: OutageRepository by inject()
     private val trackedPlaceRepository: TrackedPlaceRepository by inject()
     private val notificationLogRepository: NotificationLogRepository by inject()
-
-    private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.getDefault())
 
     override suspend fun doWork(): Result {
         return runCatching {
@@ -61,11 +58,11 @@ class NotificationWorker(
 
             NotificationChannels.ensure(applicationContext)
 
-            val outages = outageDao.getUpcomingOutages(selectedUrls.toList())
+            val outages = outageRepository.getUpcomingOutages(selectedUrls)   // List<Outage>
             val now = LocalDateTime.now()
 
-            for (entity in outages) {
-                val start = parseDateTime(entity.startDate, entity.startTime) ?: continue
+            for (outage in outages) {
+                val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime) ?: continue
                 val minutesLeft = Duration.between(now, start).toMinutes()
 
                 val matchedLead = leadHours.firstOrNull { lead ->
@@ -73,13 +70,12 @@ class NotificationWorker(
                     minutesLeft in (targetMinutes - 59L)..targetMinutes
                 } ?: continue
 
-                val outage = entity.toNotificationModel()
-
                 if (!matchesAnyTrackedPlace(outage, trackedPlaces)) {
                     continue
                 }
 
-                val notificationKey = "${entity.id}|$matchedLead"
+                val outageId = buildOutageId(outage)
+                val notificationKey = "$outageId|$matchedLead"
 
                 if (notificationLogRepository.wasSent(notificationKey)) {
                     continue
@@ -89,7 +85,7 @@ class NotificationWorker(
 
                 notificationLogRepository.markSent(
                     key = notificationKey,
-                    outageId = entity.id,
+                    outageId = outageId,
                     leadHours = matchedLead
                 )
             }
@@ -98,20 +94,6 @@ class NotificationWorker(
         }.getOrElse {
             Result.retry()
         }
-    }
-
-    private fun OutageEntity.toNotificationModel(): Outage {
-        return Outage(
-            city = city,
-            address = address,
-            startDate = startDate,
-            endDate = endDate,
-            startTime = startTime,
-            endTime = endTime,
-            reason = reason,
-            branchName = branchName,
-            status = runCatching { OutageStatus.valueOf(status) }.getOrDefault(OutageStatus.UPCOMING)
-        )
     }
 
     private fun showNotification(outage: Outage, leadHours: Int) {
@@ -175,12 +157,6 @@ class NotificationWorker(
         }
 
         return true
-    }
-
-    private fun parseDateTime(date: String?, time: String?): LocalDateTime? {
-        val d = date?.takeIf { it.isNotBlank() } ?: return null
-        val t = time?.takeIf { it.isNotBlank() } ?: return null
-        return runCatching { LocalDateTime.parse("$d $t", formatter) }.getOrNull()
     }
 
     private fun buildNotificationId(outage: Outage, leadHours: Int): Int {

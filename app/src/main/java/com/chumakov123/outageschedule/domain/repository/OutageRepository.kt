@@ -9,6 +9,7 @@ interface OutageRepository {
     suspend fun fetchOutages(branchUrl: String): List<Outage>
 
     suspend fun refreshOutages(branches: List<Branch>)
+    suspend fun getUpcomingOutages(branchUrls: Set<String>): List<Outage>
 
     fun observeOutages(branchUrls: Set<String>): Flow<List<Outage>>
 

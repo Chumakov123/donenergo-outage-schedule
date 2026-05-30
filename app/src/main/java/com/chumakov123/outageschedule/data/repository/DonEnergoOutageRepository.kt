@@ -72,6 +72,11 @@ class DonEnergoOutageRepository(
         }
     }
 
+    override suspend fun getUpcomingOutages(branchUrls: Set<String>): List<Outage> {
+        if (branchUrls.isEmpty()) return emptyList()
+        return dao.getUpcomingOutages(branchUrls.toList()).map { it.toDomain() }
+    }
+
     override fun observeOutages(branchUrls: Set<String>): Flow<List<Outage>> {
         if (branchUrls.isEmpty()) return flowOf(emptyList())
         return dao.observeOutages(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
