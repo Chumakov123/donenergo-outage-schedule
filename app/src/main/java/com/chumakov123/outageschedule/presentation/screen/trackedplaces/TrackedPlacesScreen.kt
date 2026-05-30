@@ -166,20 +166,32 @@ fun TrackedPlacesScreen(
                     )
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = place.title,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = buildString {
-                                append(place.city)
-                                if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
-                                append(place.street)
-                                if (place.house.isNotBlank()) append(", ${place.house}")
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        val fullAddress = buildString {
+                            append(place.city)
+                            if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
+                            append(place.street)
+                            if (place.house.isNotBlank()) append(", ${place.house}")
+                        }
+
+                        val isTitleEmptyOrSameAsAddress = place.title.isBlank() ||
+                                place.title.trim() == fullAddress.trim()
+
+                        if (isTitleEmptyOrSameAsAddress) {
+                            Text(
+                                text = fullAddress,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        } else {
+                            Text(
+                                text = place.title,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = fullAddress,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
 
                     IconButton(onClick = { viewModel.startEditing(place) }) {
