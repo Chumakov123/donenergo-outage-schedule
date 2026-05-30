@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -46,20 +47,23 @@ class AllOutagesViewModel(
 
     private fun refreshOnSelectionChange() {
         viewModelScope.launch(Dispatchers.IO) {
-            val branchMap = branchRepository.getBranches().associateBy { it.url }
-
             settingsRepository.selectedBranchUrlsFlow
                 .distinctUntilChanged()
                 .collectLatest { urls ->
-                    val branches = urls.mapNotNull { branchMap[it] }
-                    if (branches.isNotEmpty()) {
-                        runCatching {
+                    if (urls.isEmpty()) return@collectLatest
+
+                    runCatching {
+                        val branchMap = branchRepository.getBranches().associateBy { it.url }
+                        val branches = urls.mapNotNull { branchMap[it] }
+
+                        if (branches.isNotEmpty()) {
                             outageRepository.refreshOutages(branches)
-                        }.onFailure { throwable ->
-                            _state.value = _state.value.copy(
-                                error = throwable.message ?: "Ошибка загрузки отключений"
-                            )
                         }
+                    }.onFailure { throwable ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = throwable.message ?: "Ошибка загрузки отключений"
+                        )
                     }
                 }
         }
@@ -114,8 +118,20 @@ class AllOutagesViewModel(
                         }
                     }
                 }
+                .catch { throwable ->
+                    emit(
+                        AllOutagesState(
+                            isLoading = false,
+                            outages = emptyList(),
+                            error = throwable.message ?: "Ошибка загрузки отключений"
+                        )
+                    )
+                }
                 .collectLatest { newState ->
-                    _state.value = newState
+                    val currentError = _state.value.error
+                    _state.value = newState.copy(
+                        error = newState.error ?: currentError
+                    )
                 }
         }
     }
