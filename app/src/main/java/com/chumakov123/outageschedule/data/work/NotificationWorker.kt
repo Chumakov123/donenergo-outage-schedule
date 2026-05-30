@@ -4,26 +4,19 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.chumakov123.outageschedule.data.local.mapper.buildOutageId
 import com.chumakov123.outageschedule.data.notification.NotificationChannels
 import com.chumakov123.outageschedule.domain.model.Outage
-import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
-import com.chumakov123.outageschedule.domain.repository.OutageRepository
-import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
-import com.chumakov123.outageschedule.domain.util.OutageDateTimeParser
+import com.chumakov123.outageschedule.domain.usecase.PrepareOutageNotificationsUseCase
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.time.Duration
-import java.time.LocalDateTime
-import java.util.Locale
 
 class NotificationWorker(
     context: Context,
@@ -31,8 +24,7 @@ class NotificationWorker(
 ) : CoroutineWorker(context, params), KoinComponent {
 
     private val settingsRepository: AppSettingsRepository by inject()
-    private val outageRepository: OutageRepository by inject()
-    private val trackedPlaceRepository: TrackedPlaceRepository by inject()
+    private val prepareUseCase: PrepareOutageNotificationsUseCase by inject()
     private val notificationLogRepository: NotificationLogRepository by inject()
 
     override suspend fun doWork(): Result {
@@ -42,51 +34,23 @@ class NotificationWorker(
                     applicationContext,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
-
-                if (!granted) {
-                    return Result.success()
-                }
+                if (!granted) return Result.success()
             }
 
             val selectedUrls = settingsRepository.selectedBranchUrlsFlow.first()
             val leadHours = settingsRepository.notificationLeadHoursFlow.first()
-            val trackedPlaces = trackedPlaceRepository.observePlaces().first().filter { it.isEnabled }
-
-            if (selectedUrls.isEmpty() || leadHours.isEmpty() || trackedPlaces.isEmpty()) {
-                return Result.success()
-            }
+            if (selectedUrls.isEmpty() || leadHours.isEmpty()) return Result.success()
 
             NotificationChannels.ensure(applicationContext)
 
-            val outages = outageRepository.getUpcomingOutages(selectedUrls)   // List<Outage>
-            val now = LocalDateTime.now()
+            val notifications = prepareUseCase.prepare(selectedUrls, leadHours)
 
-            for (outage in outages) {
-                val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime) ?: continue
-                val minutesLeft = Duration.between(now, start).toMinutes()
-
-                val matchedLead = leadHours.firstOrNull { lead ->
-                    val targetMinutes = lead * 60L
-                    minutesLeft in (targetMinutes - 59L)..targetMinutes
-                } ?: continue
-
-                if (!matchesAnyTrackedPlace(outage, trackedPlaces)) {
-                    continue
-                }
-
-                val outageId = buildOutageId(outage)
-                val notificationKey = "$outageId|$matchedLead"
-
-                if (notificationLogRepository.wasSent(notificationKey)) {
-                    continue
-                }
-
-                showNotification(outage, matchedLead)
-
+            for (prep in notifications) {
+                showNotification(prep.outage, prep.leadHours)
                 notificationLogRepository.markSent(
-                    key = notificationKey,
-                    outageId = outageId,
-                    leadHours = matchedLead
+                    key = prep.notificationKey,
+                    outageId = prep.outage.buildId(),
+                    leadHours = prep.leadHours
                 )
             }
 
@@ -121,42 +85,7 @@ class NotificationWorker(
         try {
             NotificationManagerCompat.from(applicationContext)
                 .notify(buildNotificationId(outage, leadHours), notification)
-        } catch (_: SecurityException) {
-            // Permission may have been revoked between the check and notify().
-        }
-    }
-
-    private fun matchesAnyTrackedPlace(
-        outage: Outage,
-        places: List<TrackedPlace>
-    ): Boolean {
-        return places.any { place -> matchesTrackedPlace(outage, place) }
-    }
-
-    private fun matchesTrackedPlace(
-        outage: Outage,
-        place: TrackedPlace
-    ): Boolean {
-        val outageCity = compact(outage.city)
-        val trackedCity = compact(place.city)
-
-        if (outageCity != trackedCity) {
-            return false
-        }
-
-        val outageAddress = compact(outage.address)
-        val street = compact(place.street)
-        val house = compact(place.house)
-
-        if (street.isNotBlank() && !outageAddress.contains(street)) {
-            return false
-        }
-
-        if (house.isNotBlank() && !outageAddress.contains(house)) {
-            return false
-        }
-
-        return true
+        } catch (_: SecurityException) { }
     }
 
     private fun buildNotificationId(outage: Outage, leadHours: Int): Int {
@@ -169,13 +98,5 @@ class NotificationWorker(
             outage.endTime.orEmpty(),
             leadHours.toString()
         ).joinToString("|").hashCode()
-    }
-
-    private fun compact(value: String?): String {
-        return value
-            .orEmpty()
-            .lowercase(Locale.getDefault())
-            .replace(Regex("\\s+"), "")
-            .replace(Regex("[^\\p{L}\\p{Nd}]"), "")
     }
 }

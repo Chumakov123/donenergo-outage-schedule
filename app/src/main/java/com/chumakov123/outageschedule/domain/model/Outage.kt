@@ -12,4 +12,10 @@ data class Outage(
     val branchName: String = "",
     val branchUrl: String = "",
     val status: OutageStatus = OutageStatus.UPCOMING
-)
+) {
+    fun buildId(): String = listOf(
+        branchUrl, city, address,
+        startDate.orEmpty(), endDate.orEmpty(),
+        startTime.orEmpty(), endTime.orEmpty()
+    ).joinToString("|")
+}

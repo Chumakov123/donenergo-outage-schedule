@@ -18,6 +18,7 @@ import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.usecase.PrepareOutageNotificationsUseCase
 import com.chumakov123.outageschedule.domain.usecase.RefreshOutagesUseCase
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
@@ -96,6 +97,7 @@ val dataModule = module {
 
 val domainModule = module {
     factoryOf(::RefreshOutagesUseCase)
+    factoryOf(::PrepareOutageNotificationsUseCase)
 }
 
 val presentationModule = module {
