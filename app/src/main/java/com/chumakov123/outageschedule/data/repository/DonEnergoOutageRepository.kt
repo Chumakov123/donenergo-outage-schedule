@@ -34,7 +34,23 @@ class DonEnergoOutageRepository(
     override suspend fun fetchOutages(branchUrl: String): List<Outage> {
         val html = remote.fetchHtml(branchUrl)
         val doc = Jsoup.parse(html)
-        return parser.parse(doc)
+        return parser.parse(doc).mapNotNull { parsed ->
+            if (parsed.startDate != null && parsed.endDate != null) {
+                Outage(
+                    city = parsed.city,
+                    address = parsed.address,
+                    startDate = parsed.startDate,
+                    endDate = parsed.endDate,
+                    startTime = parsed.startTime,
+                    endTime = parsed.endTime,
+                    reason = parsed.reason,
+                    note = parsed.note,
+                    branchUrl = branchUrl
+                )
+            } else {
+                null
+            }
+        }
     }
 
     override suspend fun refreshOutages(branches: List<Branch>) {
@@ -43,19 +59,39 @@ class DonEnergoOutageRepository(
                 val nowMillis = System.currentTimeMillis()
                 val nowDateTime = LocalDateTime.now()
 
-                val outages = fetchOutages(branch.url).map { outage ->
-                    val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime)
-                    val end = OutageDateTimeParser.parse(outage.endDate, outage.endTime)
-                    outage.copy(status = OutageStatusCalculator.calculate(nowDateTime, start, end))
+                val html = remote.fetchHtml(branch.url)
+                val doc = Jsoup.parse(html)
+                val parsedOutages = parser.parse(doc)
+
+                val domainOutages = parsedOutages.mapNotNull { parsed ->
+                    if (parsed.startDate != null && parsed.endDate != null) {
+                        val outage = Outage(
+                            city = parsed.city,
+                            address = parsed.address,
+                            startDate = parsed.startDate,
+                            endDate = parsed.endDate,
+                            startTime = parsed.startTime,
+                            endTime = parsed.endTime,
+                            reason = parsed.reason,
+                            note = parsed.note,
+                            branchUrl = branch.url,
+                            branchName = branch.name
+                        )
+                        val start = OutageDateTimeParser.parse(outage.startDate, outage.startTime)
+                        val end = OutageDateTimeParser.parse(outage.endDate, outage.endTime)
+                        outage.copy(status = OutageStatusCalculator.calculate(nowDateTime, start, end))
+                    } else {
+                        null
+                    }
                 }
 
-                val localities = buildLocalityIndex(branch, outages, nowMillis)
+                val localities = buildLocalityIndex(branch, parsedOutages, nowMillis)
 
                 dao.deleteCurrentByBranchUrl(branch.url)
                 localityDao.deleteByBranchUrl(branch.url)
 
                 dao.insertAll(
-                    outages.map { outage ->
+                    domainOutages.map { outage ->
                         outage.toEntity(
                             branchUrl = branch.url,
                             branchName = branch.name,
@@ -86,7 +122,7 @@ class DonEnergoOutageRepository(
 
     private fun buildLocalityIndex(
         branch: Branch,
-        outages: List<Outage>,
+        parsedOutages: List<OutageHtmlParser.ParsedOutage>,
         now: Long
     ): List<BranchLocalityEntity> {
         val result = linkedMapOf<String, BranchLocalityEntity>()
@@ -118,7 +154,7 @@ class DonEnergoOutageRepository(
             )
         }
 
-        outages.forEach { outage ->
+        parsedOutages.forEach { outage ->
             add(outage.city, null)
 
             AddressSegmentParser.splitCandidates(outage.address).forEach { segment ->

@@ -3,8 +3,8 @@ package com.chumakov123.outageschedule.domain.model
 data class Outage(
     val city: String,
     val address: String,
-    val startDate: String?,
-    val endDate: String?,
+    val startDate: String,
+    val endDate: String,
     val startTime: String?,
     val endTime: String?,
     val reason: String?,
@@ -15,7 +15,7 @@ data class Outage(
 ) {
     fun buildId(): String = listOf(
         branchUrl, city, address,
-        startDate.orEmpty(), endDate.orEmpty(),
+        startDate, endDate,
         startTime.orEmpty(), endTime.orEmpty()
     ).joinToString("|")
 }

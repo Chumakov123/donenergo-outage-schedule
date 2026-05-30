@@ -8,8 +8,8 @@ private fun buildOutageId(
     branchUrl: String,
     city: String,
     address: String,
-    startDate: String?,
-    endDate: String?,
+    startDate: String,
+    endDate: String,
     startTime: String?,
     endTime: String?
 ): String {
@@ -17,8 +17,8 @@ private fun buildOutageId(
         branchUrl,
         city,
         address,
-        startDate.orEmpty(),
-        endDate.orEmpty(),
+        startDate,
+        endDate,
         startTime.orEmpty(),
         endTime.orEmpty()
     ).joinToString("|")
@@ -75,8 +75,8 @@ internal fun buildOutageId(outage: Outage): String {
         outage.branchUrl,
         outage.city,
         outage.address,
-        outage.startDate.orEmpty(),
-        outage.endDate.orEmpty(),
+        outage.startDate,
+        outage.endDate,
         outage.startTime.orEmpty(),
         outage.endTime.orEmpty()
     ).joinToString("|")

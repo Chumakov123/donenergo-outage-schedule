@@ -1,13 +1,23 @@
 package com.chumakov123.outageschedule.data.remote.parser
 
-import com.chumakov123.outageschedule.domain.model.Outage
 import org.jsoup.nodes.Document
 
 class OutageHtmlParser {
 
-    fun parse(document: Document): List<Outage> {
+    data class ParsedOutage(
+        val city: String,
+        val address: String,
+        val startDate: String?,
+        val endDate: String?,
+        val startTime: String?,
+        val endTime: String?,
+        val reason: String?,
+        val note: String?
+    )
 
-        val result = mutableListOf<Outage>()
+    fun parse(document: Document): List<ParsedOutage> {
+
+        val result = mutableListOf<ParsedOutage>()
 
         val rows = document.select("table.table_site1 tbody tr")
 
@@ -35,7 +45,7 @@ class OutageHtmlParser {
             val note = if (cols.size > 8) cols[8].text().trim().takeIf { it.isNotEmpty() } else null
 
             result.add(
-                Outage(
+                ParsedOutage(
                     city = city,
                     address = address,
                     startDate = startDate,
