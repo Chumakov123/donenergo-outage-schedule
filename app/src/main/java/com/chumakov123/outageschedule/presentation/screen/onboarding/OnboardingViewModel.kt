@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,22 +33,28 @@ class OnboardingViewModel(
 
     init {
         loadBranches()
+        observeSavedSelection()
         observeLocalities()
     }
 
     private fun loadBranches() {
         viewModelScope.launch(Dispatchers.IO) {
             val branches = branchRepository.getBranches()
-            val default = BranchSelector.findDefault(branches)
+            _state.update { it.copy(branches = branches) }
 
-            val saved = settings.selectedBranchUrlsFlow.first()
-            val initial = saved.ifEmpty { setOf(default.url) }
+            if (_state.value.selectedUrls.isEmpty()) {
+                val default = BranchSelector.findDefault(branches)
+                _state.update { it.copy(selectedUrls = setOf(default.url)) }
+            }
+        }
+    }
 
-            _state.update {
-                it.copy(
-                    branches = branches,
-                    selectedUrls = initial
-                )
+    private fun observeSavedSelection() {
+        viewModelScope.launch(Dispatchers.IO) {
+            settings.selectedBranchUrlsFlow.collectLatest { savedUrls ->
+                if (savedUrls.isNotEmpty()) {
+                    _state.update { it.copy(selectedUrls = savedUrls) }
+                }
             }
         }
     }
@@ -88,6 +93,7 @@ class OnboardingViewModel(
             }
         }
     }
+
     fun toggle(branch: Branch) {
         val current = _state.value.selectedUrls.toMutableSet()
 

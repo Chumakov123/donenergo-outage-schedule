@@ -13,16 +13,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AllOutagesState(
     val isLoading: Boolean = true,
+    val rawOutages: List<Outage> = emptyList(),
     val outages: List<Outage> = emptyList(),
     val error: String? = null,
     val onlyTrackedPlaces: Boolean = false,
@@ -42,7 +42,7 @@ class AllOutagesViewModel(
 
     init {
         refreshOnSelectionChange()
-        observeFilteredOutages()
+        observeData()
     }
 
     private fun refreshOnSelectionChange() {
@@ -50,7 +50,12 @@ class AllOutagesViewModel(
             settingsRepository.selectedBranchUrlsFlow
                 .distinctUntilChanged()
                 .collectLatest { urls ->
-                    if (urls.isEmpty()) return@collectLatest
+                    if (urls.isEmpty()) {
+                        _state.update { it.copy(isLoading = false) }
+                        return@collectLatest
+                    }
+
+                    _state.update { it.copy(isLoading = true) }
 
                     runCatching {
                         val branchMap = branchRepository.getBranches().associateBy { it.url }
@@ -60,80 +65,73 @@ class AllOutagesViewModel(
                             outageRepository.refreshOutages(branches)
                         }
                     }.onFailure { throwable ->
-                        _state.value = _state.value.copy(
-                            isLoading = false,
-                            error = throwable.message ?: "Ошибка загрузки отключений"
-                        )
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                error = throwable.message ?: "Ошибка загрузки отключений"
+                            )
+                        }
                     }
+                    _state.update { it.copy(isLoading = false) }
                 }
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observeFilteredOutages() {
+    private fun observeData() {
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.selectedBranchUrlsFlow
                 .distinctUntilChanged()
                 .flatMapLatest { urls ->
-                    if (urls.isEmpty()) {
-                        flowOf(
-                            AllOutagesState(
-                                isLoading = false,
-                                outages = emptyList(),
-                                error = null,
-                                trackedPlaces = emptyList()
-                            )
-                        )
-                    } else {
-                        combine(
-                            outageRepository.observeOutages(urls),
-                            trackedPlaceRepository.observePlaces(),
-                            settingsRepository.onlyTrackedPlacesFlow
-                        ) { outages, places, onlyTracked ->
-                            val activePlaces = places.filter { it.isEnabled }
-                            val filtered = if (onlyTracked) {
-                                TrackedPlaceMatcher.filter(outages, activePlaces)
-                            } else {
-                                outages
-                            }
-
-                            val emptyMessage = when {
-                                onlyTracked && places.isEmpty() ->
-                                    "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
-
-                                onlyTracked && places.none { it.isEnabled } ->
-                                    "Нет активных отслеживаемых мест. Включите их в разделе «Места»."
-
-                                else -> null
-                            }
-
-                            AllOutagesState(
-                                isLoading = false,
-                                outages = filtered,
-                                error = null,
-                                onlyTrackedPlaces = onlyTracked,
-                                emptyFilterMessage = emptyMessage,
-                                trackedPlaces = places
-                            )
-                        }
+                    if (urls.isEmpty()) flowOf(emptyList())
+                    else outageRepository.observeOutages(urls)
+                }
+                .collectLatest { outages ->
+                    _state.update { 
+                        it.copy(rawOutages = outages).applyFilter()
                     }
                 }
-                .catch { throwable ->
-                    emit(
-                        AllOutagesState(
-                            isLoading = false,
-                            outages = emptyList(),
-                            error = throwable.message ?: "Ошибка загрузки отключений"
-                        )
-                    )
-                }
-                .collectLatest { newState ->
-                    val currentError = _state.value.error
-                    _state.value = newState.copy(
-                        error = newState.error ?: currentError
-                    )
-                }
         }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            trackedPlaceRepository.observePlaces().collectLatest { places ->
+                _state.update { 
+                    it.copy(trackedPlaces = places).applyFilter()
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.onlyTrackedPlacesFlow.collectLatest { onlyTracked ->
+                _state.update { 
+                    it.copy(onlyTrackedPlaces = onlyTracked).applyFilter()
+                }
+            }
+        }
+    }
+
+    private fun AllOutagesState.applyFilter(): AllOutagesState {
+        val activePlaces = trackedPlaces.filter { it.isEnabled }
+        val filtered = if (onlyTrackedPlaces) {
+            TrackedPlaceMatcher.filter(rawOutages, activePlaces)
+        } else {
+            rawOutages
+        }
+
+        val emptyMessage = when {
+            onlyTrackedPlaces && trackedPlaces.isEmpty() ->
+                "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
+
+            onlyTrackedPlaces && trackedPlaces.none { it.isEnabled } ->
+                "Нет активных отслеживаемых мест. Включите их в разделе «Места»."
+
+            else -> null
+        }
+
+        return copy(
+            outages = filtered,
+            emptyFilterMessage = emptyMessage
+        )
     }
 
     fun toggleFilter(enabled: Boolean) {

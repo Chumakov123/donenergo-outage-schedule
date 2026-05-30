@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -45,6 +44,7 @@ class TrackedPlacesViewModel(
     val state: StateFlow<TrackedPlacesState> = _state
 
     private var selectedBranchUrls: Set<String> = emptySet()
+    private var allLocalities: List<BranchLocality> = emptyList()
     private var selectedLocalities: List<BranchLocality> = emptyList()
 
     init {
@@ -55,38 +55,40 @@ class TrackedPlacesViewModel(
     private fun observePlaces() {
         viewModelScope.launch(Dispatchers.IO) {
             repository.observePlaces().collectLatest { places ->
-                _state.value = _state.value.copy(
-                    places = places,
-                    error = null
-                )
+                _state.update { it.copy(places = places, error = null) }
             }
         }
     }
 
     private fun observeSuggestionsSource() {
         viewModelScope.launch(Dispatchers.IO) {
-            combine(
-                settingsRepository.selectedBranchUrlsFlow,
-                localityRepository.observeLocalities()
-            ) { urls, localities ->
-                urls to localities
-            }.collectLatest { (urls, localities) ->
+            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
                 selectedBranchUrls = urls
-                selectedLocalities = localities.filter { it.branchUrl in urls }
-
+                updateSelectedLocalities()
+                refreshSuggestions()
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            localityRepository.observeLocalities().collectLatest { localities ->
+                allLocalities = localities
+                updateSelectedLocalities()
                 refreshSuggestions()
             }
         }
     }
 
-    private fun refreshSuggestions() {
-        val current = _state.value
+    private fun updateSelectedLocalities() {
+        selectedLocalities = allLocalities.filter { it.branchUrl in selectedBranchUrls }
+    }
 
-        _state.value = current.copy(
-            citySuggestions = buildCitySuggestions(current.city),
-            streetSuggestions = buildStreetSuggestions(current.city, current.street),
-            suggestionsLoading = false
-        )
+    private fun refreshSuggestions() {
+        _state.update { current ->
+            current.copy(
+                citySuggestions = buildCitySuggestions(current.city),
+                streetSuggestions = buildStreetSuggestions(current.city, current.street),
+                suggestionsLoading = false
+            )
+        }
     }
 
     private fun buildCitySuggestions(query: String): List<String> {
@@ -124,30 +126,30 @@ class TrackedPlacesViewModel(
     }
 
     fun onTitleChange(value: String) {
-        _state.value = _state.value.copy(title = value, error = null)
+        _state.update { it.copy(title = value, error = null) }
     }
 
     fun onCityChange(value: String) {
-        _state.value = _state.value.copy(city = value, error = null)
+        _state.update { it.copy(city = value, error = null) }
         refreshSuggestions()
     }
 
     fun onStreetChange(value: String) {
-        _state.value = _state.value.copy(street = value, error = null)
+        _state.update { it.copy(street = value, error = null) }
         refreshSuggestions()
     }
 
     fun onHouseChange(value: String) {
-        _state.value = _state.value.copy(house = value, error = null)
+        _state.update { it.copy(house = value, error = null) }
     }
 
     fun onCitySuggestionClick(value: String) {
-        _state.value = _state.value.copy(city = value, error = null)
+        _state.update { it.copy(city = value, error = null) }
         refreshSuggestions()
     }
 
     fun onStreetSuggestionClick(value: String) {
-        _state.value = _state.value.copy(street = value, error = null)
+        _state.update { it.copy(street = value, error = null) }
         refreshSuggestions()
     }
 
@@ -158,9 +160,7 @@ class TrackedPlacesViewModel(
         val street = current.street.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.value = current.copy(
-                error = "Нужно заполнить хотя бы один из первых двух полей"
-            )
+            _state.update { it.copy(error = "Нужно заполнить хотя бы один из первых двух полей") }
             return
         }
 
@@ -191,18 +191,18 @@ class TrackedPlacesViewModel(
     }
 
     fun startEditing(place: TrackedPlace) {
-        _state.value = _state.value.copy(
+        _state.update { it.copy(
             editingPlaceId = place.id,
             editTitle = place.title,
             editCity = place.city,
             editStreet = place.street,
             editHouse = place.house,
             editError = null
-        )
+        ) }
     }
 
     fun cancelEditing() {
-        _state.value = _state.value.copy(editingPlaceId = null, editError = null)
+        _state.update { it.copy(editingPlaceId = null, editError = null) }
     }
 
     fun onEditTitleChange(value: String) {
@@ -228,7 +228,7 @@ class TrackedPlacesViewModel(
         val street = current.editStreet.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.value = current.copy(editError = "Заполните хотя бы город или улицу")
+            _state.update { it.copy(editError = "Заполните хотя бы город или улицу") }
             return
         }
 
