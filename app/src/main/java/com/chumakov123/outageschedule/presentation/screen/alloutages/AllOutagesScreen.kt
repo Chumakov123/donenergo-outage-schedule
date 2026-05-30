@@ -266,41 +266,58 @@ private fun formatTimeRange(outage: Outage): String? {
     }
 }
 
+private val inputDateFormats = listOf(
+    DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+    DateTimeFormatter.ofPattern("dd.MM.yy")
+)
+
+private val outputDateFormat = DateTimeFormatter.ofPattern(
+    "d MMMM",
+    Locale.forLanguageTag("ru")
+)
+
 private fun formatDate(value: String?): String? {
-    val date = value?.takeIf { it.isNotBlank() }
+    val date = value?.trim()
+        ?.takeIf { it.isNotBlank() }
         ?: return null
 
-    return runCatching {
-        val parsed = LocalDate.parse(
-            date,
-            DateTimeFormatter.ofPattern("dd.MM.yyyy")
-        )
+    for (formatter in inputDateFormats) {
+        val parsed = runCatching {
+            LocalDate.parse(date, formatter)
+        }.getOrNull()
 
-        parsed.format(
-            DateTimeFormatter.ofPattern(
-                "d MMMM",
-                Locale.forLanguageTag("ru")
-            )
-        )
-    }.getOrNull()
+        if (parsed != null) {
+            return parsed.format(outputDateFormat)
+        }
+    }
+
+    return date
+}
+
+private fun parseDate(date: String): LocalDate? {
+    val normalized = date.trim()
+
+    return inputDateFormats.firstNotNullOfOrNull { formatter ->
+        runCatching {
+            LocalDate.parse(normalized, formatter)
+        }.getOrNull()
+    }
 }
 
 private fun parseDateTime(outage: Outage): LocalDateTime? {
     val date = outage.startDate?.takeIf { it.isNotBlank() }
         ?: return null
 
-    val time = outage.startTime
-        ?.takeIf { it.isNotBlank() }
-        ?: "00:00"
+    val parsedDate = parseDate(date)
+        ?: return null
 
-    return runCatching {
-        val parsedDate = LocalDate.parse(
-            date,
-            DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val parsedTime = runCatching {
+        LocalTime.parse(
+            outage.startTime
+                ?.takeIf { it.isNotBlank() }
+                ?: "00:00"
         )
+    }.getOrNull() ?: LocalTime.MIN
 
-        val parsedTime = LocalTime.parse(time)
-
-        LocalDateTime.of(parsedDate, parsedTime)
-    }.getOrNull()
+    return LocalDateTime.of(parsedDate, parsedTime)
 }
