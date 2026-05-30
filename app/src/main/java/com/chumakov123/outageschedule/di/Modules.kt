@@ -18,6 +18,7 @@ import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.usecase.RefreshOutagesUseCase
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
 import com.chumakov123.outageschedule.presentation.screen.history.HistoryViewModel
@@ -25,6 +26,7 @@ import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingV
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsViewModel
 import com.chumakov123.outageschedule.presentation.screen.trackedplaces.TrackedPlacesViewModel
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -93,7 +95,7 @@ val dataModule = module {
 }
 
 val domainModule = module {
-    // use cases
+    factoryOf(::RefreshOutagesUseCase)
 }
 
 val presentationModule = module {

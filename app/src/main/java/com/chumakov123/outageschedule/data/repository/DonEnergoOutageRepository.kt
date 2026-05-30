@@ -11,7 +11,6 @@ import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSou
 import com.chumakov123.outageschedule.data.remote.parser.OutageHtmlParser
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.model.Outage
-import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
 import com.chumakov123.outageschedule.domain.trackedplace.AddressSegmentParser
@@ -22,8 +21,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import org.jsoup.Jsoup
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class DonEnergoOutageRepository(
     private val remote: OutageRemoteDataSource,
