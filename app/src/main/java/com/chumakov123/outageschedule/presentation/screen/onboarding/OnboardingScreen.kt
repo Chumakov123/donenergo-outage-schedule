@@ -66,15 +66,13 @@ fun OnboardingScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
 
-                    Text(
-                        text = if (suggestions.isEmpty()) {
-                            "Подсказки загружаются..."
-                        } else {
-                            suggestions.joinToString(" • ")
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (suggestions.isNotEmpty()) {
+                        Text(
+                            text = suggestions.joinToString(" • "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
