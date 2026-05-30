@@ -22,9 +22,11 @@ import kotlinx.coroutines.launch
 
 data class AllOutagesState(
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val rawOutages: List<Outage> = emptyList(),
     val outages: List<Outage> = emptyList(),
     val error: String? = null,
+    val searchQuery: String = "",
     val onlyTrackedPlaces: Boolean = false,
     val emptyFilterMessage: String? = null,
     val trackedPlaces: List<TrackedPlace> = emptyList()
@@ -54,27 +56,33 @@ class AllOutagesViewModel(
                         _state.update { it.copy(isLoading = false) }
                         return@collectLatest
                     }
-
-                    _state.update { it.copy(isLoading = true) }
-
-                    runCatching {
-                        val branchMap = branchRepository.getBranches().associateBy { it.url }
-                        val branches = urls.mapNotNull { branchMap[it] }
-
-                        if (branches.isNotEmpty()) {
-                            outageRepository.refreshOutages(branches)
-                        }
-                    }.onFailure { throwable ->
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                error = throwable.message ?: "Ошибка загрузки отключений"
-                            )
-                        }
-                    }
-                    _state.update { it.copy(isLoading = false) }
+                    refresh(urls)
                 }
         }
+    }
+
+    fun onRefresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val urls = _state.value.trackedPlaces.map { it.city }.toSet() // Simple mock, better use settings
+            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
+                refresh(urls)
+            }
+        }
+    }
+
+    private suspend fun refresh(urls: Set<String>) {
+        if (urls.isEmpty()) return
+        _state.update { it.copy(isRefreshing = true) }
+        runCatching {
+            val branchMap = branchRepository.getBranches().associateBy { it.url }
+            val branches = urls.mapNotNull { branchMap[it] }
+            if (branches.isNotEmpty()) {
+                outageRepository.refreshOutages(branches)
+            }
+        }.onFailure { throwable ->
+            _state.update { it.copy(error = throwable.message) }
+        }
+        _state.update { it.copy(isLoading = false, isRefreshing = false) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -87,44 +95,52 @@ class AllOutagesViewModel(
                     else outageRepository.observeOutages(urls)
                 }
                 .collectLatest { outages ->
-                    _state.update { 
-                        it.copy(rawOutages = outages).applyFilter()
-                    }
+                    _state.update { it.copy(rawOutages = outages).applyFilter() }
                 }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             trackedPlaceRepository.observePlaces().collectLatest { places ->
-                _state.update { 
-                    it.copy(trackedPlaces = places).applyFilter()
-                }
+                _state.update { it.copy(trackedPlaces = places).applyFilter() }
             }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.onlyTrackedPlacesFlow.collectLatest { onlyTracked ->
-                _state.update { 
-                    it.copy(onlyTrackedPlaces = onlyTracked).applyFilter()
-                }
+                _state.update { it.copy(onlyTrackedPlaces = onlyTracked).applyFilter() }
             }
         }
     }
 
+    fun onSearchQueryChange(query: String) {
+        _state.update { it.copy(searchQuery = query).applyFilter() }
+    }
+
     private fun AllOutagesState.applyFilter(): AllOutagesState {
         val activePlaces = trackedPlaces.filter { it.isEnabled }
-        val filtered = if (onlyTrackedPlaces) {
+        
+        var filtered = if (onlyTrackedPlaces) {
             TrackedPlaceMatcher.filter(rawOutages, activePlaces)
         } else {
             rawOutages
         }
 
+        if (searchQuery.isNotBlank()) {
+            val q = searchQuery.trim().lowercase()
+            filtered = filtered.filter { 
+                it.address.lowercase().contains(q) || 
+                it.city.lowercase().contains(q) ||
+                it.reason?.lowercase()?.contains(q) == true
+            }
+        }
+
         val emptyMessage = when {
             onlyTrackedPlaces && trackedPlaces.isEmpty() ->
-                "Нет отслеживаемых мест. Добавьте их, чтобы фильтр работал."
-
-            onlyTrackedPlaces && trackedPlaces.none { it.isEnabled } ->
-                "Нет активных отслеживаемых мест. Включите их в разделе «Места»."
-
+                "Нет отслеживаемых мест. Добавьте их в разделе «Места»."
+            onlyTrackedPlaces && activePlaces.isEmpty() ->
+                "Нет активных отслеживаемых мест."
+            filtered.isEmpty() && searchQuery.isNotBlank() ->
+                "По запросу «$searchQuery» ничего не найдено."
             else -> null
         }
 

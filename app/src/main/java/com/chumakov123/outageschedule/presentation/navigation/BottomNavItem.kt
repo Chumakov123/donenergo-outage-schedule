@@ -1,8 +1,8 @@
 package com.chumakov123.outageschedule.presentation.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -16,16 +16,16 @@ val bottomNavItems = listOf(
     BottomNavItem(
         route = Screen.AllOutages.route,
         title = "Отключения",
-        icon = Icons.Outlined.Home
+        icon = Icons.Outlined.Bolt
     ),
     BottomNavItem(
         route = Screen.TrackedPlaces.route,
-        title = "Места",
-        icon = Icons.Outlined.Place
+        title = "Мои адреса",
+        icon = Icons.Outlined.Home
     ),
 //    BottomNavItem(
 //        route = Screen.History.route,
-//        title = "История",
+//        title = "Архив",
 //        icon = Icons.Outlined.History
 //    ),
     BottomNavItem(

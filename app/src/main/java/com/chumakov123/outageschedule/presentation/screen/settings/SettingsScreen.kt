@@ -129,7 +129,7 @@ fun SettingsScreen(
 
             item {
                 Text(
-                    text = "Выберите регионы для отслеживания (минимум один):",
+                    text = "Выберите филиалы для отслеживания отключений:",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = Spacing.Small)

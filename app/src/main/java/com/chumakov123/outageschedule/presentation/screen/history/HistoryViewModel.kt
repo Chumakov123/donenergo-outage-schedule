@@ -13,15 +13,23 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class HistoryState(
+    val rawItems: List<Outage> = emptyList(),
+    val filteredItems: List<Outage> = emptyList(),
+    val searchQuery: String = "",
+    val isLoading: Boolean = true
+)
 
 class HistoryViewModel(
     private val outageRepository: OutageRepository,
     private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<List<Outage>>(emptyList())
-    val state: StateFlow<List<Outage>> = _state
+    private val _state = MutableStateFlow(HistoryState())
+    val state: StateFlow<HistoryState> = _state
 
     init {
         observeHistory()
@@ -37,8 +45,31 @@ class HistoryViewModel(
                     else outageRepository.observeHistory(urls)
                 }
                 .collectLatest { items ->
-                    _state.value = items
+                    _state.update { 
+                        it.copy(
+                            rawItems = items,
+                            isLoading = false
+                        ).applyFilter()
+                    }
                 }
         }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _state.update { it.copy(searchQuery = query).applyFilter() }
+    }
+
+    private fun HistoryState.applyFilter(): HistoryState {
+        val filtered = if (searchQuery.isBlank()) {
+            rawItems
+        } else {
+            val q = searchQuery.trim().lowercase()
+            rawItems.filter { 
+                it.address.lowercase().contains(q) || 
+                it.city.lowercase().contains(q) ||
+                it.reason?.lowercase()?.contains(q) == true
+            }
+        }
+        return copy(filteredItems = filtered)
     }
 }

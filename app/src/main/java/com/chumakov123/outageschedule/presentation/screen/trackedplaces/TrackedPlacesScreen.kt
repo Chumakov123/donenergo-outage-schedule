@@ -1,264 +1,302 @@
 package com.chumakov123.outageschedule.presentation.screen.trackedplaces
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.filled.AddHome
+import androidx.compose.material.icons.filled.AddLocationAlt
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationCity
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackedPlacesScreen(
     viewModel: TrackedPlacesViewModel = koinViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
+    var isFormVisible by remember { mutableStateOf(false) }
 
     ScreenContainer {
-
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
         ) {
-
+            // Кнопка развертывания формы
             item {
-                Text(
-                    text = "Отслеживаемые места",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
-
-            item {
-                Text(
-                    text = "Подсказки берутся из уже загруженных данных по выбранным филиалам.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = state.title,
-                    onValueChange = viewModel::onTitleChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Название") }
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = state.city,
-                    onValueChange = viewModel::onCityChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Населённый пункт или район") }
-                )
-            }
-
-            items(state.citySuggestions) { suggestion ->
-                Text(
-                    text = suggestion,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.onCitySuggestionClick(
-                                suggestion
-                            )
-                        }
-                        .padding(vertical = Spacing.Small),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = state.street,
-                    onValueChange = viewModel::onStreetChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Улица, СНТ, объект") }
-                )
-            }
-
-            items(state.streetSuggestions) { suggestion ->
-                Text(
-                    text = suggestion,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.onStreetSuggestionClick(
-                                suggestion
-                            )
-                        }
-                        .padding(vertical = Spacing.Small),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = state.house,
-                    onValueChange = viewModel::onHouseChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Дом, литера, дробь") }
-                )
-            }
-
-            if (state.error != null) {
-                item {
-                    Text(state.error)
-                }
-            }
-
-            item {
-                Button(
-                    onClick = viewModel::addPlace,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Добавить")
-                }
-            }
-
-            item {
-                HorizontalDivider(
-                    Modifier,
-                    DividerDefaults.Thickness,
-                    DividerDefaults.color
-                )
-            }
-
-            items(state.places, key = { it.id }) { place ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Spacing.Small),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Switch(
-                        checked = place.isEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.togglePlaceEnabled(place, enabled)
-                        },
-                        modifier = Modifier.padding(end = Spacing.Small)
+                    SectionHeader(
+                        title = "Мои адреса",
+                        icon = Icons.Default.Home,
+                        modifier = Modifier.padding(horizontal = 0.dp)
                     )
+                    
+                    TextButton(onClick = { isFormVisible = !isFormVisible }) {
+                        Icon(if (isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
+                        Spacer(Modifier.size(4.dp))
+                        Text(if (isFormVisible) "Свернуть" else "Добавить")
+                    }
+                }
+            }
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        val fullAddress = buildString {
-                            append(place.city)
-                            if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
-                            append(place.street)
-                            if (place.house.isNotBlank()) append(", ${place.house}")
-                        }
+            // Анимированная форма добавления
+            item {
+                AnimatedVisibility(visible = isFormVisible) {
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.Medium),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                        ) {
+                            OutlinedTextField(
+                                value = state.title,
+                                onValueChange = viewModel::onTitleChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Название (Дом, Работа...)") },
+                                leadingIcon = { Icon(Icons.Default.Place, null) },
+                                singleLine = true
+                            )
 
-                        val isTitleEmptyOrSameAsAddress = place.title.isBlank() ||
-                                place.title.trim() == fullAddress.trim()
+                            OutlinedTextField(
+                                value = state.city,
+                                onValueChange = viewModel::onCityChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Населённый пункт") },
+                                leadingIcon = { Icon(Icons.Default.LocationCity, null) },
+                                singleLine = true
+                            )
+                            if (state.citySuggestions.isNotEmpty()) {
+                                SuggestionsRow(state.citySuggestions, viewModel::onCitySuggestionClick)
+                            }
 
-                        if (isTitleEmptyOrSameAsAddress) {
-                            Text(
-                                text = fullAddress,
-                                style = MaterialTheme.typography.bodyLarge
+                            OutlinedTextField(
+                                value = state.street,
+                                onValueChange = viewModel::onStreetChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Улица") },
+                                leadingIcon = { Icon(Icons.Default.Map, null) },
+                                singleLine = true
                             )
-                        } else {
-                            Text(
-                                text = place.title,
-                                style = MaterialTheme.typography.bodyLarge
+                            if (state.streetSuggestions.isNotEmpty()) {
+                                SuggestionsRow(state.streetSuggestions, viewModel::onStreetSuggestionClick)
+                            }
+
+                            OutlinedTextField(
+                                value = state.house,
+                                onValueChange = viewModel::onHouseChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Номер дома") },
+                                leadingIcon = { Icon(Icons.Default.Home, null) },
+                                singleLine = true
                             )
-                            Text(
-                                text = fullAddress,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+
+                            if (state.error != null) {
+                                Text(state.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                            }
+
+                            Button(
+                                onClick = { 
+                                    viewModel.addPlace()
+                                    isFormVisible = false 
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Сохранить адрес")
+                            }
                         }
                     }
+                }
+            }
 
-                    IconButton(onClick = { viewModel.startEditing(place) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "Редактировать"
+            if (state.places.isEmpty()) {
+                item { EmptyPlacesState { isFormVisible = true } }
+            } else {
+                // Группировка: Активные
+                val activePlaces = state.places.filter { it.isEnabled }
+                if (activePlaces.isNotEmpty()) {
+                    stickyHeader {
+                        SubHeader("Активные уведомления", Icons.Default.NotificationsActive)
+                    }
+                    items(activePlaces, key = { it.id }) { place ->
+                        TrackedPlaceItem(
+                            modifier = Modifier.animateItem(),
+                            place = place,
+                            onToggle = { viewModel.togglePlaceEnabled(place, it) },
+                            onEdit = { viewModel.startEditing(place) },
+                            onDelete = { viewModel.deletePlace(place) }
                         )
                     }
-                    IconButton(onClick = { viewModel.deletePlace(place) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Удалить"
+                }
+
+                // Группировка: Выключенные
+                val inactivePlaces = state.places.filter { !it.isEnabled }
+                if (inactivePlaces.isNotEmpty()) {
+                    stickyHeader {
+                        SubHeader("Выключено", Icons.Default.NotificationsOff)
+                    }
+                    items(inactivePlaces, key = { it.id }) { place ->
+                        TrackedPlaceItem(
+                            modifier = Modifier.animateItem(),
+                            place = place,
+                            onToggle = { viewModel.togglePlaceEnabled(place, it) },
+                            onEdit = { viewModel.startEditing(place) },
+                            onDelete = { viewModel.deletePlace(place) }
                         )
                     }
                 }
             }
+
+            item { Spacer(Modifier.size(Spacing.Large)) }
         }
     }
+
     if (state.editingPlaceId != null) {
-        AlertDialog(
-            onDismissRequest = { viewModel.cancelEditing() },
-            title = { Text("Редактировать место") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                    OutlinedTextField(
-                        value = state.editTitle,
-                        onValueChange = viewModel::onEditTitleChange,
-                        label = { Text("Название") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = state.editCity,
-                        onValueChange = viewModel::onEditCityChange,
-                        label = { Text("Населённый пункт") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = state.editStreet,
-                        onValueChange = viewModel::onEditStreetChange,
-                        label = { Text("Улица / СНТ / объект") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = state.editHouse,
-                        onValueChange = viewModel::onEditHouseChange,
-                        label = { Text("Дом, литера, дробь") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (state.editError != null) {
-                        Text(
-                            text = state.editError,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+        EditPlaceDialog(state, viewModel)
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.padding(horizontal = Spacing.Medium)) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.size(Spacing.Small))
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun SubHeader(title: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = Spacing.Medium, vertical = 8.dp)
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.size(Spacing.Small))
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+    }
+}
+
+@Composable
+private fun SuggestionsRow(suggestions: List<String>, onClick: (String) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.Small), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        items(suggestions) { suggestion ->
+            AssistChip(onClick = { onClick(suggestion) }, label = { Text(suggestion) })
+        }
+    }
+}
+
+@Composable
+private fun TrackedPlaceItem(
+    modifier: Modifier = Modifier,
+    place: TrackedPlace,
+    onToggle: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = 4.dp).animateContentSize()
+    ) {
+        Row(modifier = Modifier.padding(Spacing.Medium), verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = place.isEnabled, onCheckedChange = onToggle)
+            Spacer(Modifier.size(Spacing.Medium))
+            Column(modifier = Modifier.weight(1f)) {
+                val fullAddress = buildString {
+                    append(place.city)
+                    if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
+                    append(place.street)
+                    if (place.house.isNotBlank()) append(", ${place.house}")
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.saveEditedPlace() }) {
-                    Text("Сохранить")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.cancelEditing() }) {
-                    Text("Отмена")
+                if (place.title.isNotBlank() && place.title != fullAddress) {
+                    Text(place.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(fullAddress, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Text(fullAddress, style = MaterialTheme.typography.titleMedium)
                 }
             }
-        )
+            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline) }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
+        }
     }
+}
+
+@Composable
+private fun EmptyPlacesState(onAddClick: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().padding(Spacing.Large), horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+        Spacer(Modifier.size(Spacing.Medium))
+        Text("Список пуст", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Добавьте адреса, чтобы получать уведомления об отключениях.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.size(Spacing.Large))
+        Button(onClick = onAddClick) { Text("Добавить адрес") }
+    }
+}
+
+@Composable
+private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesViewModel) {
+    AlertDialog(
+        onDismissRequest = { viewModel.cancelEditing() },
+        title = { Text("Редактирование") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                OutlinedTextField(value = state.editTitle, onValueChange = viewModel::onEditTitleChange, label = { Text("Название") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = state.editCity, onValueChange = viewModel::onEditCityChange, label = { Text("Город") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = state.editStreet, onValueChange = viewModel::onEditStreetChange, label = { Text("Улица") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = state.editHouse, onValueChange = viewModel::onEditHouseChange, label = { Text("Дом") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::saveEditedPlace) { Text("Сохранить") } },
+        dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text("Отмена") } }
+    )
 }

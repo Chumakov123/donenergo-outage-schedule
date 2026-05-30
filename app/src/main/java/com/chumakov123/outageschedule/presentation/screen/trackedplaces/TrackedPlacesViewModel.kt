@@ -160,7 +160,7 @@ class TrackedPlacesViewModel(
         val street = current.street.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(error = "Нужно заполнить хотя бы один из первых двух полей") }
+            _state.update { it.copy(error = "Укажите город и улицу") }
             return
         }
 
@@ -228,7 +228,7 @@ class TrackedPlacesViewModel(
         val street = current.editStreet.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(editError = "Заполните хотя бы город или улицу") }
+            _state.update { it.copy(editError = "Укажите город и улицу") }
             return
         }
 
