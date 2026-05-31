@@ -266,7 +266,8 @@ private fun OutageItem(
     outage: Outage,
     trackedPlaces: List<com.chumakov123.outageschedule.domain.model.TrackedPlace>
 ) {
-    val matchedPlace = TrackedPlaceMatcher.findBestMatch(outage, trackedPlaces)
+    val matches = TrackedPlaceMatcher.findAllMatches(outage, trackedPlaces)
+    val highlights = matches.mapNotNull { it.matchedStreetText }.filter { it.isNotBlank() }.distinct()
 
     ElevatedCard(
         modifier = modifier
@@ -292,9 +293,9 @@ private fun OutageItem(
                 }
 
                 Text(
-                    text = buildHighlightedAddress(outage.address, matchedPlace?.matchedStreetText),
+                    text = buildHighlightedAddress(outage.address, highlights),
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (matchedPlace != null) FontWeight.Bold else FontWeight.Medium
+                        fontWeight = FontWeight.Medium
                     )
                 )
 
@@ -307,7 +308,7 @@ private fun OutageItem(
                 }
             }
 
-            if (matchedPlace != null) {
+            if (matches.isNotEmpty()) {
                 Icon(
                     Icons.Default.LocationOn,
                     null,
@@ -347,13 +348,57 @@ private fun StatusBadge(status: OutageStatus) {
     )
 }
 
-private fun buildHighlightedAddress(address: String, highlight: String?) = buildAnnotatedString {
-    if (highlight.isNullOrBlank()) { append(address); return@buildAnnotatedString }
-    val index = address.indexOf(highlight, ignoreCase = true)
-    if (index < 0) { append(address); return@buildAnnotatedString }
-    append(address.substring(0, index))
-    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(address.substring(index, index + highlight.length)) }
-    append(address.substring(index + highlight.length))
+private fun buildHighlightedAddress(address: String, highlights: List<String>) = buildAnnotatedString {
+    if (highlights.isEmpty()) {
+        append(address)
+        return@buildAnnotatedString
+    }
+
+    val ranges = mutableListOf<IntRange>()
+    highlights.forEach { highlight ->
+        var startIndex = 0
+        while (true) {
+            val index = address.indexOf(highlight, startIndex, ignoreCase = true)
+            if (index == -1) break
+            ranges.add(index until (index + highlight.length))
+            startIndex = index + highlight.length
+        }
+    }
+
+    if (ranges.isEmpty()) {
+        append(address)
+        return@buildAnnotatedString
+    }
+
+    val sortedRanges = ranges.sortedBy { it.first }
+    val mergedRanges = mutableListOf<IntRange>()
+    if (sortedRanges.isNotEmpty()) {
+        var current = sortedRanges[0]
+        for (i in 1 until sortedRanges.size) {
+            val next = sortedRanges[i]
+            if (next.first <= current.last + 1) {
+                current = current.first..maxOf(current.last, next.last)
+            } else {
+                mergedRanges.add(current)
+                current = next
+            }
+        }
+        mergedRanges.add(current)
+    }
+
+    var lastIndex = 0
+    mergedRanges.forEach { range ->
+        if (range.first > lastIndex) {
+            append(address.substring(lastIndex, range.first))
+        }
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+            append(address.substring(range.first, minOf(range.last + 1, address.length)))
+        }
+        lastIndex = range.last + 1
+    }
+    if (lastIndex < address.length) {
+        append(address.substring(lastIndex))
+    }
 }
 
 private fun formatDateRange(outage: Outage): String? {
