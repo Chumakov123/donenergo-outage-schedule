@@ -37,7 +37,8 @@ class PrepareOutageNotificationsUseCase(
                 minutesLeft in (targetMinutes - 59L)..targetMinutes
             } ?: continue
 
-            if (TrackedPlaceMatcher.findBestMatch(outage, trackedPlaces) == null) continue
+            val matches = TrackedPlaceMatcher.findAllMatches(outage, trackedPlaces)
+            if (matches.isEmpty()) continue
 
             val notificationKey = "${outage.buildId()}|$matchedLead"
 
@@ -47,7 +48,8 @@ class PrepareOutageNotificationsUseCase(
                 PreparedNotification(
                     outage = outage,
                     leadHours = matchedLead,
-                    notificationKey = notificationKey
+                    notificationKey = notificationKey,
+                    matchedPlaceTitles = matches.map { it.place.title }
                 )
             )
         }

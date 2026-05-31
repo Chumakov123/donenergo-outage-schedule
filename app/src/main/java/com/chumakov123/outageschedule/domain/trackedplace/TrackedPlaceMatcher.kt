@@ -30,7 +30,14 @@ object TrackedPlaceMatcher {
             .firstOrNull()
     }
 
-    private fun matches(place: TrackedPlace, outage: Outage): Boolean {
+    fun findAllMatches(
+        outage: Outage,
+        places: List<TrackedPlace>
+    ): List<TrackedPlaceMatch> {
+        return places.mapNotNull { place -> findMatch(place, outage) }
+    }
+
+    fun matches(place: TrackedPlace, outage: Outage): Boolean {
         return findMatch(place, outage) != null
     }
 

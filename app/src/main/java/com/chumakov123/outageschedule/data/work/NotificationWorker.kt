@@ -45,7 +45,11 @@ class NotificationWorker(
             val notifications = prepareUseCase.prepare(selectedUrls, leadHours)
 
             for (prep in notifications) {
-                outageNotifier.show(prep.outage, prep.leadHours)
+                outageNotifier.show(
+                    outage = prep.outage,
+                    leadHours = prep.leadHours,
+                    placeTitles = prep.matchedPlaceTitles
+                )
                 notificationLogRepository.markSent(
                     key = prep.notificationKey,
                     outageId = prep.outage.buildId(),
