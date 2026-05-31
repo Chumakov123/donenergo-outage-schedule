@@ -32,7 +32,9 @@ data class TrackedPlacesState(
     val editCity: String = "",
     val editStreet: String = "",
     val editHouse: String = "",
-    val editError: String? = null
+    val editError: String? = null,
+    
+    val deletingPlace: TrackedPlace? = null
 )
 
 class TrackedPlacesViewModel(
@@ -204,9 +206,19 @@ class TrackedPlacesViewModel(
         }
     }
 
-    fun deletePlace(place: TrackedPlace) {
+    fun onDeleteClick(place: TrackedPlace) {
+        _state.update { it.copy(deletingPlace = place) }
+    }
+
+    fun cancelDelete() {
+        _state.update { it.copy(deletingPlace = null) }
+    }
+
+    fun confirmDelete() {
+        val place = _state.value.deletingPlace ?: return
         viewModelScope.launch(Dispatchers.IO) {
             repository.deletePlace(place.id)
+            _state.update { it.copy(deletingPlace = null) }
         }
     }
 

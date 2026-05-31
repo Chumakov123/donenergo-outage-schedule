@@ -168,7 +168,7 @@ fun TrackedPlacesScreen(
                             place = place,
                             onToggle = { viewModel.togglePlaceEnabled(place, it) },
                             onEdit = { viewModel.startEditing(place) },
-                            onDelete = { viewModel.deletePlace(place) }
+                            onDelete = { viewModel.onDeleteClick(place) }
                         )
                     }
                 }
@@ -185,7 +185,7 @@ fun TrackedPlacesScreen(
                             place = place,
                             onToggle = { viewModel.togglePlaceEnabled(place, it) },
                             onEdit = { viewModel.startEditing(place) },
-                            onDelete = { viewModel.deletePlace(place) }
+                            onDelete = { viewModel.onDeleteClick(place) }
                         )
                     }
                 }
@@ -197,6 +197,14 @@ fun TrackedPlacesScreen(
 
     if (state.editingPlaceId != null) {
         EditPlaceDialog(state, viewModel)
+    }
+
+    if (state.deletingPlace != null) {
+        DeleteConfirmationDialog(
+            place = state.deletingPlace,
+            onConfirm = viewModel::confirmDelete,
+            onDismiss = viewModel::cancelDelete
+        )
     }
 }
 
@@ -281,5 +289,28 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
             } 
         },
         dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text("Отмена") } }
+    )
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    place: TrackedPlace,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Удаление адреса") },
+        text = { Text("Вы уверены, что хотите удалить адрес \"${place.title}\"?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Удалить", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
     )
 }
