@@ -86,9 +86,13 @@ class TrackedPlacesViewModel(
 
     private fun refreshSuggestions() {
         _state.update { current ->
+            val isEditing = current.editingPlaceId != null
+            val cityQuery = if (isEditing) current.editCity else current.city
+            val streetQuery = if (isEditing) current.editStreet else current.street
+
             current.copy(
-                citySuggestions = buildCitySuggestions(current.city),
-                streetSuggestions = buildStreetSuggestions(current.city, current.street),
+                citySuggestions = buildCitySuggestions(cityQuery),
+                streetSuggestions = buildStreetSuggestions(cityQuery, streetQuery),
                 suggestionsLoading = false
             )
         }
@@ -154,12 +158,22 @@ class TrackedPlacesViewModel(
     }
 
     fun onCitySuggestionClick(value: String) {
-        _state.update { it.copy(city = value, error = null) }
+        val isEditing = _state.value.editingPlaceId != null
+        if (isEditing) {
+            _state.update { it.copy(editCity = value, editError = null) }
+        } else {
+            _state.update { it.copy(city = value, error = null) }
+        }
         refreshSuggestions()
     }
 
     fun onStreetSuggestionClick(value: String) {
-        _state.update { it.copy(street = value, error = null) }
+        val isEditing = _state.value.editingPlaceId != null
+        if (isEditing) {
+            _state.update { it.copy(editStreet = value, editError = null) }
+        } else {
+            _state.update { it.copy(street = value, error = null) }
+        }
         refreshSuggestions()
     }
 
@@ -231,10 +245,12 @@ class TrackedPlacesViewModel(
             editHouse = place.house,
             editError = null
         ) }
+        refreshSuggestions()
     }
 
     fun cancelEditing() {
         _state.update { it.copy(editingPlaceId = null, editError = null) }
+        refreshSuggestions()
     }
 
     fun onEditTitleChange(value: String) {
@@ -243,10 +259,12 @@ class TrackedPlacesViewModel(
 
     fun onEditCityChange(value: String) {
         _state.update { it.copy(editCity = value, editError = null) }
+        refreshSuggestions()
     }
 
     fun onEditStreetChange(value: String) {
         _state.update { it.copy(editStreet = value, editError = null) }
+        refreshSuggestions()
     }
 
     fun onEditHouseChange(value: String) {
@@ -283,6 +301,7 @@ class TrackedPlacesViewModel(
                     )
                 )
                 _state.update { it.copy(editingPlaceId = null, editError = null) }
+                refreshSuggestions()
             } catch (e: Exception) {
                 _state.update { it.copy(editError = "Ошибка при сохранении: ${e.message}") }
             }

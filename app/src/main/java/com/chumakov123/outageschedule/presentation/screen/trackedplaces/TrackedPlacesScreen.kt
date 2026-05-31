@@ -290,12 +290,51 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
     AlertDialog(
         onDismissRequest = { viewModel.cancelEditing() },
         title = { Text("Редактирование") },
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                OutlinedTextField(value = state.editTitle, onValueChange = viewModel::onEditTitleChange, label = { Text("Название") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = state.editCity, onValueChange = viewModel::onEditCityChange, label = { Text("Город") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = state.editStreet, onValueChange = viewModel::onEditStreetChange, label = { Text("Улица") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = state.editHouse, onValueChange = viewModel::onEditHouseChange, label = { Text("Дом") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = state.editTitle,
+                    onValueChange = viewModel::onEditTitleChange,
+                    label = { Text("Название (Дом, Работа...)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Place, null) },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = state.editCity,
+                    onValueChange = viewModel::onEditCityChange,
+                    label = { Text("Населённый пункт") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.LocationCity, null) },
+                    singleLine = true
+                )
+                if (state.citySuggestions.isNotEmpty()) {
+                    SuggestionsRow(state.citySuggestions, viewModel::onCitySuggestionClick)
+                }
+
+                OutlinedTextField(
+                    value = state.editStreet,
+                    onValueChange = viewModel::onEditStreetChange,
+                    label = { Text("Улица") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Map, null) },
+                    singleLine = true
+                )
+                if (state.streetSuggestions.isNotEmpty()) {
+                    SuggestionsRow(state.streetSuggestions, viewModel::onStreetSuggestionClick)
+                }
+
+                OutlinedTextField(
+                    value = state.editHouse,
+                    onValueChange = viewModel::onEditHouseChange,
+                    label = { Text("Номер дома") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Home, null) },
+                    singleLine = true
+                )
                 
                 if (state.editError != null) {
                     Text(state.editError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -307,7 +346,7 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 onClick = viewModel::saveEditedPlace,
                 enabled = state.editCity.isNotBlank() || state.editStreet.isNotBlank()
             ) { 
-                Text("Сохранить") 
+                Text("Сохранить", fontWeight = FontWeight.Bold) 
             } 
         },
         dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text("Отмена") } }
@@ -323,10 +362,12 @@ private fun DeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Удаление адреса") },
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
         text = { Text("Вы уверены, что хотите удалить адрес \"${place.title}\"?") },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Удалить", color = MaterialTheme.colorScheme.error)
+                Text("Удалить", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
