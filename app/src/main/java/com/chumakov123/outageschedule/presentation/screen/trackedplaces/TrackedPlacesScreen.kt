@@ -41,10 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,7 +58,6 @@ fun TrackedPlacesScreen(
     viewModel: TrackedPlacesViewModel = koinViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
-    var isFormVisible by remember { mutableStateOf(false) }
 
     ScreenContainer {
         LazyColumn(
@@ -82,17 +77,17 @@ fun TrackedPlacesScreen(
                         modifier = Modifier.padding(horizontal = 0.dp)
                     )
                     
-                    TextButton(onClick = { isFormVisible = !isFormVisible }) {
-                        Icon(if (isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
+                    TextButton(onClick = viewModel::onToggleForm) {
+                        Icon(if (state.isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
                         Spacer(Modifier.size(4.dp))
-                        Text(if (isFormVisible) "Свернуть" else "Добавить")
+                        Text(if (state.isFormVisible) "Свернуть" else "Добавить")
                     }
                 }
             }
 
             // Анимированная форма добавления
             item {
-                AnimatedVisibility(visible = isFormVisible) {
+                AnimatedVisibility(visible = state.isFormVisible) {
                     ElevatedCard(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
                     ) {
@@ -147,10 +142,8 @@ fun TrackedPlacesScreen(
                             }
 
                             Button(
-                                onClick = { 
-                                    viewModel.addPlace()
-                                    isFormVisible = false 
-                                },
+                                onClick = viewModel::addPlace,
+                                enabled = state.city.isNotBlank() || state.street.isNotBlank(),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Сохранить адрес")
@@ -161,7 +154,7 @@ fun TrackedPlacesScreen(
             }
 
             if (state.places.isEmpty()) {
-                item { EmptyPlacesState { isFormVisible = true } }
+                item { EmptyPlacesState(onAddClick = viewModel::onToggleForm) }
             } else {
                 // Группировка: Активные
                 val activePlaces = state.places.filter { it.isEnabled }
@@ -294,9 +287,20 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 OutlinedTextField(value = state.editCity, onValueChange = viewModel::onEditCityChange, label = { Text("Город") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = state.editStreet, onValueChange = viewModel::onEditStreetChange, label = { Text("Улица") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = state.editHouse, onValueChange = viewModel::onEditHouseChange, label = { Text("Дом") }, modifier = Modifier.fillMaxWidth())
+                
+                if (state.editError != null) {
+                    Text(state.editError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                }
             }
         },
-        confirmButton = { TextButton(onClick = viewModel::saveEditedPlace) { Text("Сохранить") } },
+        confirmButton = { 
+            TextButton(
+                onClick = viewModel::saveEditedPlace,
+                enabled = state.editCity.isNotBlank() || state.editStreet.isNotBlank()
+            ) { 
+                Text("Сохранить") 
+            } 
+        },
         dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text("Отмена") } }
     )
 }

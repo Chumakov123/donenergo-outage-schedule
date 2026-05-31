@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 
 data class TrackedPlacesState(
     val places: List<TrackedPlace> = emptyList(),
+    val isFormVisible: Boolean = false,
     val title: String = "",
     val city: String = "",
     val street: String = "",
@@ -125,6 +126,13 @@ class TrackedPlacesViewModel(
             .toList()
     }
 
+    fun onToggleForm() {
+        _state.update { it.copy(isFormVisible = !it.isFormVisible, error = null) }
+        if (_state.value.isFormVisible) {
+            refreshSuggestions()
+        }
+    }
+
     fun onTitleChange(value: String) {
         _state.update { it.copy(title = value, error = null) }
     }
@@ -160,7 +168,7 @@ class TrackedPlacesViewModel(
         val street = current.street.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(error = "Укажите город и улицу") }
+            _state.update { it.copy(error = "Укажите город или улицу") }
             return
         }
 
@@ -171,16 +179,28 @@ class TrackedPlacesViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            repository.addPlace(
-                TrackedPlace(
-                    title = title,
-                    city = city,
-                    street = street,
-                    house = current.house.trim()
+            try {
+                repository.addPlace(
+                    TrackedPlace(
+                        title = title,
+                        city = city,
+                        street = street,
+                        house = current.house.trim()
+                    )
                 )
-            )
 
-            _state.value = TrackedPlacesState()
+                _state.update { it.copy(
+                    isFormVisible = false,
+                    title = "",
+                    city = "",
+                    street = "",
+                    house = "",
+                    error = null
+                ) }
+                refreshSuggestions()
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Ошибка при сохранении: ${e.message}") }
+            }
         }
     }
 
@@ -228,7 +248,7 @@ class TrackedPlacesViewModel(
         val street = current.editStreet.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(editError = "Укажите город и улицу") }
+            _state.update { it.copy(editError = "Укажите город или улицу") }
             return
         }
 
@@ -239,17 +259,21 @@ class TrackedPlacesViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            repository.updatePlace(
-                TrackedPlace(
-                    id = id,
-                    title = title,
-                    city = city,
-                    street = street,
-                    house = current.editHouse.trim(),
-                    isEnabled = true
+            try {
+                repository.updatePlace(
+                    TrackedPlace(
+                        id = id,
+                        title = title,
+                        city = city,
+                        street = street,
+                        house = current.editHouse.trim(),
+                        isEnabled = true
+                    )
                 )
-            )
-            _state.update { it.copy(editingPlaceId = null) }
+                _state.update { it.copy(editingPlaceId = null, editError = null) }
+            } catch (e: Exception) {
+                _state.update { it.copy(editError = "Ошибка при сохранении: ${e.message}") }
+            }
         }
     }
 
