@@ -94,22 +94,40 @@ fun AllOutagesScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                     ) {
                         item {
-                            SectionHeader(
-                                title = "Отключения",
-                                icon = Icons.Default.Bolt,
-                                modifier = Modifier.padding(top = Spacing.Small)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = Spacing.Small),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                SectionHeader(
+                                    title = "Отключения",
+                                    icon = Icons.Default.Bolt,
+                                    modifier = Modifier.padding(horizontal = 0.dp)
+                                )
+
+                                FilterChip(
+                                    selected = state.onlyTrackedPlaces,
+                                    onClick = { viewModel.toggleFilter(!state.onlyTrackedPlaces) },
+                                    label = { Text("Мои", style = MaterialTheme.typography.labelMedium) },
+                                    leadingIcon = if (state.onlyTrackedPlaces) {
+                                        { Icon(Icons.Default.Place, null, modifier = Modifier.size(16.dp)) }
+                                    } else null,
+                                    modifier = Modifier.padding(end = Spacing.Medium)
+                                )
+                            }
                         }
 
-                        // Поиск и Фильтр
-                        item {
-                            TopControls(
-                                searchQuery = state.searchQuery,
-                                onSearchChange = viewModel::onSearchQueryChange,
-                                onlyTracked = state.onlyTrackedPlaces,
-                                onFilterToggle = viewModel::toggleFilter,
-                                count = state.outages.size
-                            )
+                        // Поиск
+                        if (state.outages.isNotEmpty() || state.searchQuery.isNotEmpty()) {
+                            item {
+                                TopControls(
+                                    searchQuery = state.searchQuery,
+                                    onSearchChange = viewModel::onSearchQueryChange,
+                                    count = state.outages.size
+                                )
+                            }
                         }
 
                         if (state.error != null && state.outages.isEmpty()) {
@@ -144,57 +162,45 @@ fun AllOutagesScreen(
 private fun TopControls(
     searchQuery: String,
     onSearchChange: (String) -> Unit,
-    onlyTracked: Boolean,
-    onFilterToggle: (Boolean) -> Unit,
     count: Int
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Поиск по адресу...") },
-                leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Close, null, modifier = Modifier.size(20.dp))
-                        }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Поиск по адресу...") },
+            leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchChange("") }) {
+                        Icon(Icons.Default.Close, null, modifier = Modifier.size(20.dp))
                     }
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
+                }
+            },
+            singleLine = true,
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = Color.Transparent
             )
-
-            FilterChip(
-                selected = onlyTracked,
-                onClick = { onFilterToggle(!onlyTracked) },
-                label = { Text("Мои", style = MaterialTheme.typography.labelMedium) },
-                leadingIcon = if (onlyTracked) {
-                    { Icon(Icons.Default.Place, null, modifier = Modifier.size(16.dp)) }
-                } else null
+        )
+        
+        if (searchQuery.isNotEmpty() || count > 0) {
+            Text(
+                text = "Найдено записей: $count",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(start = Spacing.Medium)
             )
         }
-        
-        Text(
-            text = "Найдено записей: $count",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp)
-        )
     }
 }
 
