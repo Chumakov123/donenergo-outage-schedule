@@ -14,7 +14,7 @@ object TrackedPlaceMatcher {
         outages: List<Outage>,
         places: List<TrackedPlace>
     ): List<Outage> {
-        if (places.isEmpty()) return outages
+        if (places.isEmpty()) return emptyList()
 
         return outages.filter { outage ->
             places.any { place -> matches(place, outage) }

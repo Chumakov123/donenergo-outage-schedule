@@ -1,5 +1,10 @@
 package com.chumakov123.outageschedule.presentation.screen.alloutages
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +24,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Place
@@ -72,85 +78,108 @@ fun AllOutagesScreen(
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (state.isLoading && state.rawOutages.isEmpty()) {
-                LoadingState()
-            } else {
-                PullToRefreshBox(
-                    isRefreshing = state.isRefreshing,
-                    onRefresh = { viewModel.onRefresh() }
-                ) {
-                    val groupedOutages = state.outages
-                        .sortedWith(
-                            compareBy(
-                                { parseDateTime(it) ?: LocalDateTime.MAX },
-                                { it.address.lowercase() }
-                            )
-                        )
-                        .groupBy { it.city.trim() }
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Floating Header Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionHeader(
+                    title = "Отключения",
+                    icon = Icons.Default.Bolt,
+                    modifier = Modifier.padding(horizontal = 0.dp)
+                )
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { viewModel.toggleSearch() },
+                        enabled = state.isSearchEnabled || state.isSearchVisible
                     ) {
-                        item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = Spacing.Small),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SectionHeader(
-                                    title = "Отключения",
-                                    icon = Icons.Default.Bolt,
-                                    modifier = Modifier.padding(horizontal = 0.dp)
-                                )
-
-                                FilterChip(
-                                    selected = state.onlyTrackedPlaces,
-                                    onClick = { viewModel.toggleFilter(!state.onlyTrackedPlaces) },
-                                    label = { Text("Мои", style = MaterialTheme.typography.labelMedium) },
-                                    leadingIcon = if (state.onlyTrackedPlaces) {
-                                        { Icon(Icons.Default.Place, null, modifier = Modifier.size(16.dp)) }
-                                    } else null,
-                                    modifier = Modifier.padding(end = Spacing.Medium)
-                                )
+                        Icon(
+                            imageVector = if (state.isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = when {
+                                state.isSearchVisible -> MaterialTheme.colorScheme.primary
+                                !state.isSearchEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                else -> MaterialTheme.colorScheme.onSurface
                             }
-                        }
+                        )
+                    }
 
-                        // Поиск
-                        if (state.outages.isNotEmpty() || state.searchQuery.isNotEmpty()) {
-                            item {
-                                TopControls(
-                                    searchQuery = state.searchQuery,
-                                    onSearchChange = viewModel::onSearchQueryChange,
-                                    count = state.outages.size
+                    FilterChip(
+                        selected = state.onlyTrackedPlaces,
+                        onClick = { viewModel.toggleFilter(!state.onlyTrackedPlaces) },
+                        label = {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "Мои адреса",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        modifier = Modifier.padding(start = Spacing.Small)
+                    )
+                }
+            }
+
+            // Floating Search Panel
+            AnimatedVisibility(
+                visible = state.isSearchVisible,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                TopControls(
+                    searchQuery = state.searchQuery,
+                    onSearchChange = viewModel::onSearchQueryChange,
+                    count = state.outages.size
+                )
+            }
+
+            Box(modifier = Modifier.weight(1f)) {
+                if (state.isLoading && state.rawOutages.isEmpty()) {
+                    LoadingState()
+                } else {
+                    PullToRefreshBox(
+                        isRefreshing = state.isRefreshing,
+                        onRefresh = { viewModel.onRefresh() }
+                    ) {
+                        val groupedOutages = state.outages
+                            .sortedWith(
+                                compareBy(
+                                    { parseDateTime(it) ?: LocalDateTime.MAX },
+                                    { it.address.lowercase() }
                                 )
+                            )
+                            .groupBy { it.city.trim() }
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                        ) {
+                            if (state.error != null && state.outages.isEmpty()) {
+                                item { ErrorState(message = state.error) }
+                            } else if (state.emptyFilterMessage != null) {
+                                item { EmptyState(message = state.emptyFilterMessage) }
                             }
-                        }
 
-                        if (state.error != null && state.outages.isEmpty()) {
-                            item { ErrorState(message = state.error) }
-                        } else if (state.emptyFilterMessage != null) {
-                            item { EmptyState(message = state.emptyFilterMessage) }
-                        }
+                            groupedOutages.forEach { (city, outages) ->
+                                stickyHeader {
+                                    CityHeader(city)
+                                }
 
-                        groupedOutages.forEach { (city, outages) ->
-                            stickyHeader {
-                                CityHeader(city)
+                                items(outages, key = { it.buildId() }) { outage ->
+                                    OutageItem(
+                                        modifier = Modifier.animateItem(),
+                                        outage = outage,
+                                        trackedPlaces = state.trackedPlaces
+                                    )
+                                }
                             }
 
-                            items(outages, key = { it.buildId() }) { outage ->
-                                OutageItem(
-                                    modifier = Modifier.animateItem(),
-                                    outage = outage,
-                                    trackedPlaces = state.trackedPlaces
-                                )
-                            }
+                            item { Spacer(modifier = Modifier.size(Spacing.Large)) }
                         }
-
-                        item { Spacer(modifier = Modifier.size(Spacing.Large)) }
                     }
                 }
             }
@@ -298,7 +327,7 @@ private fun StatusBadge(status: OutageStatus) {
         label = { Text(label) },
         colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor),
         border = null,
-        modifier = Modifier.size(height = 32.dp, width = 120.dp) // Adjusted width for better fit
+        modifier = Modifier.size(height = 32.dp, width = 120.dp)
     )
 }
 

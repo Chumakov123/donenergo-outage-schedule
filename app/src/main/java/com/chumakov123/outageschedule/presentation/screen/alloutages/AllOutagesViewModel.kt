@@ -27,6 +27,8 @@ data class AllOutagesState(
     val outages: List<Outage> = emptyList(),
     val error: String? = null,
     val searchQuery: String = "",
+    val isSearchVisible: Boolean = false,
+    val isSearchEnabled: Boolean = false,
     val onlyTrackedPlaces: Boolean = false,
     val emptyFilterMessage: String? = null,
     val trackedPlaces: List<TrackedPlace> = emptyList()
@@ -63,7 +65,6 @@ class AllOutagesViewModel(
 
     fun onRefresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            val urls = _state.value.trackedPlaces.map { it.city }.toSet() // Simple mock, better use settings
             settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
                 refresh(urls)
             }
@@ -116,17 +117,34 @@ class AllOutagesViewModel(
         _state.update { it.copy(searchQuery = query).applyFilter() }
     }
 
+    fun toggleSearch() {
+        _state.update { 
+            if (!it.isSearchEnabled && !it.isSearchVisible) return@update it
+            val newVisible = !it.isSearchVisible
+            it.copy(
+                isSearchVisible = newVisible,
+                searchQuery = if (!newVisible) "" else it.searchQuery
+            ).applyFilter()
+        }
+    }
+
     private fun AllOutagesState.applyFilter(): AllOutagesState {
         val activePlaces = trackedPlaces.filter { it.isEnabled }
         
-        var filtered = if (onlyTrackedPlaces) {
+        val baseList = if (onlyTrackedPlaces) {
             TrackedPlaceMatcher.filter(rawOutages, activePlaces)
         } else {
             rawOutages
         }
 
-        if (searchQuery.isNotBlank()) {
-            val q = searchQuery.trim().lowercase()
+        val canSearch = baseList.isNotEmpty()
+
+        val effectiveSearchVisible = if (!canSearch) false else isSearchVisible
+        val effectiveSearchQuery = if (!effectiveSearchVisible) "" else searchQuery
+
+        var filtered = baseList
+        if (effectiveSearchQuery.isNotBlank()) {
+            val q = effectiveSearchQuery.trim().lowercase()
             filtered = filtered.filter { 
                 it.address.lowercase().contains(q) || 
                 it.city.lowercase().contains(q) ||
@@ -138,14 +156,21 @@ class AllOutagesViewModel(
             onlyTrackedPlaces && trackedPlaces.isEmpty() ->
                 "Нет отслеживаемых мест. Добавьте их в разделе «Места»."
             onlyTrackedPlaces && activePlaces.isEmpty() ->
-                "Нет активных отслеживаемых мест."
-            filtered.isEmpty() && searchQuery.isNotBlank() ->
-                "По запросу «$searchQuery» ничего не найдено."
+                "Все отслеживаемые места отключены. Включите их или добавьте новые."
+            filtered.isEmpty() && effectiveSearchQuery.isNotBlank() ->
+                "По запросу «$effectiveSearchQuery» ничего не найдено."
+            filtered.isEmpty() && onlyTrackedPlaces ->
+                "Для ваших мест активных или будущих отключений не найдено."
+            filtered.isEmpty() && rawOutages.isEmpty() ->
+                "Список отключений пуст."
             else -> null
         }
 
         return copy(
             outages = filtered,
+            isSearchVisible = effectiveSearchVisible,
+            isSearchEnabled = canSearch,
+            searchQuery = effectiveSearchQuery,
             emptyFilterMessage = emptyMessage
         )
     }
