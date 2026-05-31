@@ -151,7 +151,10 @@ fun AllOutagesScreen(
                             }
                         } else if (state.emptyFilterMessage != null) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                EmptyState(message = state.emptyFilterMessage)
+                                EmptyState(
+                                    message = state.emptyFilterMessage,
+                                    icon = state.emptyFilterIcon ?: Icons.Default.Info
+                                )
                             }
                         }
 

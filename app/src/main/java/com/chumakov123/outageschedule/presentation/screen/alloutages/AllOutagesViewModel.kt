@@ -1,5 +1,11 @@
 package com.chumakov123.outageschedule.presentation.screen.alloutages
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.Outage
@@ -31,6 +37,7 @@ data class AllOutagesState(
     val isSearchEnabled: Boolean = false,
     val onlyTrackedPlaces: Boolean = false,
     val emptyFilterMessage: String? = null,
+    val emptyFilterIcon: ImageVector? = null,
     val trackedPlaces: List<TrackedPlace> = emptyList()
 )
 
@@ -152,18 +159,18 @@ class AllOutagesViewModel(
             }
         }
 
-        val emptyMessage = when {
+        val (emptyMessage, emptyIcon) = when {
             onlyTrackedPlaces && trackedPlaces.isEmpty() ->
-                "Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»"
+                "Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»" to Icons.Default.LocationOn
             onlyTrackedPlaces && activePlaces.isEmpty() ->
-                "Нет активных отслеживаемых адресов. Включите их в разделе «Мои адреса»"
+                "Нет активных отслеживаемых адресов. Включите их в разделе «Мои адреса»" to Icons.Default.LocationOff
             filtered.isEmpty() && effectiveSearchQuery.isNotBlank() ->
-                "По запросу «$effectiveSearchQuery» ничего не найдено"
+                "По запросу «$effectiveSearchQuery» ничего не найдено" to Icons.Default.Search
             filtered.isEmpty() && onlyTrackedPlaces ->
-                "По вашим адресам отключения не планируются"
+                "По вашим адресам отключения не планируются" to Icons.Default.CheckCircle
             filtered.isEmpty() && rawOutages.isEmpty() ->
-                "Отключения не планируются"
-            else -> null
+                "Отключения не планируются" to Icons.Default.CheckCircle
+            else -> null to null
         }
 
         return copy(
@@ -171,7 +178,8 @@ class AllOutagesViewModel(
             isSearchVisible = effectiveSearchVisible,
             isSearchEnabled = canSearch,
             searchQuery = effectiveSearchQuery,
-            emptyFilterMessage = emptyMessage
+            emptyFilterMessage = emptyMessage,
+            emptyFilterIcon = emptyIcon
         )
     }
 
