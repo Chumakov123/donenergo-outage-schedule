@@ -6,6 +6,7 @@ import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
 import com.chumakov123.outageschedule.domain.repository.BranchRepository
+import com.chumakov123.outageschedule.domain.util.NotificationPermissionChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,10 +19,12 @@ data class SettingsState(
     val selectedUrls: Set<String> = emptySet(),
     val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
     val syncIntervalHours: Int = 6,
-    val notificationLeadHours: Set<Int> = setOf(24)
+    val notificationLeadHours: Set<Int> = setOf(24),
+    val isNotificationPermissionGranted: Boolean = false
 )
 
 class SettingsViewModel(
+    private val permissionChecker: NotificationPermissionChecker,
     private val branchRepository: BranchRepository,
     private val localityRepository: BranchLocalityRepository,
     private val settingsRepository: AppSettingsRepository
@@ -34,6 +37,7 @@ class SettingsViewModel(
         loadBranches()
         observeSettings()
         observeLocalities()
+        checkNotificationPermission()
     }
 
     private fun loadBranches() {
@@ -77,6 +81,11 @@ class SettingsViewModel(
                 _state.update { it.copy(citySuggestionsByBranchUrl = cities) }
             }
         }
+    }
+
+    fun checkNotificationPermission() {
+        val isGranted = permissionChecker.areNotificationsEnabled()
+        _state.update { it.copy(isNotificationPermissionGranted = isGranted) }
     }
 
     fun toggle(branch: Branch) {

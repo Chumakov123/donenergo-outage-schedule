@@ -2,6 +2,7 @@ package com.chumakov123.outageschedule.di
 
 import androidx.room.Room
 import com.chumakov123.outageschedule.data.local.database.AppDatabase
+import com.chumakov123.outageschedule.data.notification.AndroidNotificationPermissionChecker
 import com.chumakov123.outageschedule.data.notification.AndroidOutageNotifier
 import com.chumakov123.outageschedule.data.remote.datasource.BranchRemoteDataSource
 import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSource
@@ -22,6 +23,7 @@ import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
 import com.chumakov123.outageschedule.domain.usecase.PrepareOutageNotificationsUseCase
 import com.chumakov123.outageschedule.domain.usecase.RefreshOutagesUseCase
+import com.chumakov123.outageschedule.domain.util.NotificationPermissionChecker
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
 import com.chumakov123.outageschedule.presentation.screen.history.HistoryViewModel
@@ -97,6 +99,7 @@ val dataModule = module {
     }
 
     single<OutageNotifier> { AndroidOutageNotifier(androidContext()) }
+    single<NotificationPermissionChecker> { AndroidNotificationPermissionChecker(androidContext()) }
 }
 
 val domainModule = module {
