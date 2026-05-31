@@ -87,7 +87,7 @@ fun SettingsScreen(
                         content = {
                             Column {
                                 Text(
-                                    text = "Каждые $hours часов",
+                                    text = "Каждые $hours ${hours.hoursLabel()}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
@@ -253,5 +253,17 @@ private fun SettingsRow(
             content()
         }
         trailingContent()
+    }
+}
+
+private fun Int.hoursLabel(): String {
+    val mod10 = this % 10
+    val mod100 = this % 100
+
+    return when {
+        mod100 in 11..14 -> "часов"
+        mod10 == 1 -> "час"
+        mod10 in 2..4 -> "часа"
+        else -> "часов"
     }
 }
