@@ -8,22 +8,22 @@ val SurfaceDark = Color(0xFF181C23)
 val SurfaceVariantDark = Color(0xFF222833)
 
 // Light Theme Colors
-val BackgroundLight = Color(0xFFF8F9FA)
+val BackgroundLight = Color(0xFFF4F6F9)
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFF1F3F5)
+val SurfaceVariantLight = Color(0xFFE7EBF1)
 
-val PrimaryBlue = Color(0xFF4A7DFF) // Slightly adjusted for both
+val PrimaryBlue = Color(0xFF5886FF)
 val SecondaryBlue = Color(0xFF7AA2FF)
 
 val TextPrimaryDark = Color(0xFFF2F4F8)
 val TextSecondaryDark = Color(0xFFB3BCCB)
 
-val TextPrimaryLight = Color(0xFF1A1C1E)
-val TextSecondaryLight = Color(0xFF44474E)
+val TextPrimaryLight = Color(0xFF10131A)
+val TextSecondaryLight = Color(0xFF515862)
 
-val SuccessGreen = Color(0xFF5AC98B)
-val WarningOrange = Color(0xFFFFB457)
-val ErrorRed = Color(0xFFFF6B6B)
+val SuccessGreen = Color(0xFF2F9E66)
+val WarningOrange = Color(0xFFF08A24)
+val ErrorRed = Color(0xFFE25555)
 
 val DividerDark = Color(0xFF2B3240)
-val DividerLight = Color(0xFFE1E3E8)
+val DividerLight = Color(0xFFC9D0DA)

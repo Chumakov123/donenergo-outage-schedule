@@ -1,5 +1,6 @@
 package com.chumakov123.outageschedule.presentation.theme
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -27,8 +28,8 @@ private val LightColorScheme = lightColorScheme(
     background = BackgroundLight,
     surface = SurfaceLight,
     surfaceVariant = SurfaceVariantLight,
-    onPrimary = TextPrimaryLight,
-    onSecondary = TextPrimaryLight,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
     onBackground = TextPrimaryLight,
     onSurface = TextPrimaryLight,
     onSurfaceVariant = TextSecondaryLight,

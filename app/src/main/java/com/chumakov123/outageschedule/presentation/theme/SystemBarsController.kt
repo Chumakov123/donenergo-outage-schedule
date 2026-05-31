@@ -2,7 +2,6 @@ package com.chumakov123.outageschedule.presentation.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -13,7 +12,6 @@ import androidx.core.view.WindowCompat
 @Composable
 fun SystemBarsController(darkTheme: Boolean) {
     val view = LocalView.current
-    val colorScheme = MaterialTheme.colorScheme
 
     SideEffect {
         val window = (view.context as Activity).window

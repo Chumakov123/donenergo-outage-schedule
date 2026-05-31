@@ -246,13 +246,20 @@ private fun TrackedPlaceItem(
     onDelete: () -> Unit
 ) {
     ElevatedCard(
-        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = 4.dp).animateContentSize(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.Medium, vertical = 2.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.padding(Spacing.Medium), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .animateContentSize()
+                .padding(Spacing.Medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Switch(checked = place.isEnabled, onCheckedChange = onToggle)
             Spacer(Modifier.size(Spacing.Medium))
             Column(modifier = Modifier.weight(1f)) {
