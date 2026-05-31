@@ -154,15 +154,15 @@ class AllOutagesViewModel(
 
         val emptyMessage = when {
             onlyTrackedPlaces && trackedPlaces.isEmpty() ->
-                "Нет отслеживаемых мест. Добавьте их в разделе «Места»."
+                "Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»"
             onlyTrackedPlaces && activePlaces.isEmpty() ->
-                "Все отслеживаемые места отключены. Включите их или добавьте новые."
+                "Нет активных отслеживаемых адресов. Включите их в разделе «Мои адреса»"
             filtered.isEmpty() && effectiveSearchQuery.isNotBlank() ->
-                "По запросу «$effectiveSearchQuery» ничего не найдено."
+                "По запросу «$effectiveSearchQuery» ничего не найдено"
             filtered.isEmpty() && onlyTrackedPlaces ->
-                "Для ваших мест активных или будущих отключений не найдено."
+                "По вашим адресам отключения не планируются"
             filtered.isEmpty() && rawOutages.isEmpty() ->
-                "Список отключений пуст."
+                "Отключения не планируются"
             else -> null
         }
 

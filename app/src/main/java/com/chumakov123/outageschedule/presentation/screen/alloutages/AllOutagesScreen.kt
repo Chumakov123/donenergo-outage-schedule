@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
@@ -145,6 +144,17 @@ fun AllOutagesScreen(
                         isRefreshing = state.isRefreshing,
                         onRefresh = { viewModel.onRefresh() }
                     ) {
+                        // Centered States (Error or Empty Message)
+                        if (state.error != null && state.outages.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                ErrorState(message = state.error)
+                            }
+                        } else if (state.emptyFilterMessage != null) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                EmptyState(message = state.emptyFilterMessage)
+                            }
+                        }
+
                         val groupedOutages = state.outages
                             .sortedWith(
                                 compareBy(
@@ -158,12 +168,6 @@ fun AllOutagesScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                         ) {
-                            if (state.error != null && state.outages.isEmpty()) {
-                                item { ErrorState(message = state.error) }
-                            } else if (state.emptyFilterMessage != null) {
-                                item { EmptyState(message = state.emptyFilterMessage) }
-                            }
-
                             groupedOutages.forEach { (city, outages) ->
                                 stickyHeader {
                                     CityHeader(city)
@@ -178,7 +182,9 @@ fun AllOutagesScreen(
                                 }
                             }
 
-                            item { Spacer(modifier = Modifier.size(Spacing.Large)) }
+                            if (state.outages.isNotEmpty()) {
+                                item { Spacer(modifier = Modifier.size(Spacing.Large)) }
+                            }
                         }
                     }
                 }
