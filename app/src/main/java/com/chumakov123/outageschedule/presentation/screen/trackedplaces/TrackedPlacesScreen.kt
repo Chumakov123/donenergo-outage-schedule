@@ -3,7 +3,6 @@ package com.chumakov123.outageschedule.presentation.screen.trackedplaces
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,12 +42,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
+import com.chumakov123.outageschedule.presentation.component.SectionHeader
+import com.chumakov123.outageschedule.presentation.component.SubHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
 
@@ -197,27 +197,6 @@ fun TrackedPlacesScreen(
 
     if (state.editingPlaceId != null) {
         EditPlaceDialog(state, viewModel)
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.padding(horizontal = Spacing.Medium)) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.size(Spacing.Small))
-        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun SubHeader(title: String, icon: ImageVector) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = Spacing.Medium, vertical = 8.dp)
-    ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.size(Spacing.Small))
-        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
     }
 }
 

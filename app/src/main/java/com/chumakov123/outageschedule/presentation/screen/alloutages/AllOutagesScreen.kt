@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -47,13 +46,16 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
+import com.chumakov123.outageschedule.presentation.component.EmptyState
+import com.chumakov123.outageschedule.presentation.component.ErrorState
+import com.chumakov123.outageschedule.presentation.component.LoadingState
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
+import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
@@ -139,18 +141,6 @@ fun AllOutagesScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.padding(horizontal = Spacing.Medium)
-    ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.size(Spacing.Small))
-        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
 private fun TopControls(
     searchQuery: String,
     onSearchChange: (String) -> Unit,
@@ -222,19 +212,6 @@ private fun CityHeader(city: String) {
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold
         )
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.size(Spacing.Medium))
-        Text("Синхронизация...", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -317,24 +294,6 @@ private fun StatusBadge(status: OutageStatus) {
         border = null,
         modifier = Modifier.size(height = 32.dp, width = 120.dp) // Adjusted width for better fit
     )
-}
-
-@Composable
-private fun EmptyState(message: String) {
-    Column(modifier = Modifier.fillMaxWidth().padding(Spacing.Large), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Default.Info, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline)
-        Spacer(modifier = Modifier.size(Spacing.Small))
-        Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
-private fun ErrorState(message: String) {
-    Column(modifier = Modifier.fillMaxWidth().padding(Spacing.Large), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Default.ErrorOutline, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-        Spacer(modifier = Modifier.size(Spacing.Small))
-        Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-    }
 }
 
 private fun buildHighlightedAddress(address: String, highlight: String?) = buildAnnotatedString {
