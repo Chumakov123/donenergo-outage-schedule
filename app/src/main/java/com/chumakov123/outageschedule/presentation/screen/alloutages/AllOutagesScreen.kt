@@ -277,44 +277,46 @@ private fun OutageItem(
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small)
             ) {
-                StatusBadge(outage.status)
-                if (matchedPlace != null) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                if (outage.status == OutageStatus.ACTIVE || outage.status == OutageStatus.FINISHED) {
+                    StatusBadge(outage.status)
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    InfoRow(Icons.Default.CalendarToday, formatDateRange(outage) ?: "---")
+                    InfoRow(Icons.Default.Schedule, formatTimeRange(outage) ?: "---")
+                }
+
+                Text(
+                    text = buildHighlightedAddress(outage.address, matchedPlace?.matchedStreetText),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = if (matchedPlace != null) FontWeight.Bold else FontWeight.Medium
                     )
+                )
+
+                if (!outage.reason.isNullOrBlank()) {
+                    InfoRow(Icons.Default.ErrorOutline, outage.reason, MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                if (!outage.note.isNullOrBlank()) {
+                    InfoRow(Icons.Default.Info, outage.note, MaterialTheme.colorScheme.secondary, FontStyle.Italic)
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                InfoRow(Icons.Default.CalendarToday, formatDateRange(outage) ?: "---")
-                InfoRow(Icons.Default.Schedule, formatTimeRange(outage) ?: "---")
-            }
-
-            Text(
-                text = buildHighlightedAddress(outage.address, matchedPlace?.matchedStreetText),
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = if (matchedPlace != null) FontWeight.Bold else FontWeight.Medium
+            if (matchedPlace != null) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(Spacing.Medium)
+                        .size(20.dp)
                 )
-            )
-
-            if (!outage.reason.isNullOrBlank()) {
-                InfoRow(Icons.Default.ErrorOutline, outage.reason, MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            if (!outage.note.isNullOrBlank()) {
-                InfoRow(Icons.Default.Info, outage.note, MaterialTheme.colorScheme.secondary, FontStyle.Italic)
             }
         }
     }
