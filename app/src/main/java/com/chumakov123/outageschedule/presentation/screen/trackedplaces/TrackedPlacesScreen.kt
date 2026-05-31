@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -60,138 +61,153 @@ fun TrackedPlacesScreen(
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Кнопка развертывания формы
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SectionHeader(
-                        title = "Мои адреса",
-                        icon = Icons.Default.Home,
-                        modifier = Modifier.padding(horizontal = 0.dp)
-                    )
-                    
-                    TextButton(onClick = viewModel::onToggleForm) {
-                        Icon(if (state.isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
-                        Spacer(Modifier.size(4.dp))
-                        Text(if (state.isFormVisible) "Свернуть" else "Добавить")
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionHeader(
+                    title = "Мои адреса",
+                    icon = Icons.Default.Home,
+                    modifier = Modifier.padding(horizontal = 0.dp)
+                )
+
+                TextButton(onClick = viewModel::onToggleForm) {
+                    Icon(if (state.isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
+                    Spacer(Modifier.size(4.dp))
+                    Text(if (state.isFormVisible) "Свернуть" else "Добавить")
                 }
             }
 
-            // Анимированная форма добавления
-            item {
-                AnimatedVisibility(visible = state.isFormVisible) {
-                    ElevatedCard(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(Spacing.Medium),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-                        ) {
-                            OutlinedTextField(
-                                value = state.title,
-                                onValueChange = viewModel::onTitleChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Название (Дом, Работа...)") },
-                                leadingIcon = { Icon(Icons.Default.Place, null) },
-                                singleLine = true
-                            )
-
-                            OutlinedTextField(
-                                value = state.city,
-                                onValueChange = viewModel::onCityChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Населённый пункт") },
-                                leadingIcon = { Icon(Icons.Default.LocationCity, null) },
-                                singleLine = true
-                            )
-                            if (state.citySuggestions.isNotEmpty()) {
-                                SuggestionsRow(state.citySuggestions, viewModel::onCitySuggestionClick)
-                            }
-
-                            OutlinedTextField(
-                                value = state.street,
-                                onValueChange = viewModel::onStreetChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Улица") },
-                                leadingIcon = { Icon(Icons.Default.Map, null) },
-                                singleLine = true
-                            )
-                            if (state.streetSuggestions.isNotEmpty()) {
-                                SuggestionsRow(state.streetSuggestions, viewModel::onStreetSuggestionClick)
-                            }
-
-                            OutlinedTextField(
-                                value = state.house,
-                                onValueChange = viewModel::onHouseChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Номер дома") },
-                                leadingIcon = { Icon(Icons.Default.Home, null) },
-                                singleLine = true
-                            )
-
-                            if (state.error != null) {
-                                Text(state.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                            }
-
-                            Button(
-                                onClick = viewModel::addPlace,
-                                enabled = state.city.isNotBlank() || state.street.isNotBlank(),
-                                modifier = Modifier.fillMaxWidth()
+            Box(modifier = Modifier.weight(1f)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                ) {
+                    // Анимированная форма добавления
+                    item {
+                        this@Column.AnimatedVisibility(visible = state.isFormVisible) {
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
                             ) {
-                                Text("Сохранить адрес")
+                                Column(
+                                    modifier = Modifier.padding(Spacing.Medium),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                                ) {
+                                    OutlinedTextField(
+                                        value = state.title,
+                                        onValueChange = viewModel::onTitleChange,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("Название (Дом, Работа...)") },
+                                        leadingIcon = { Icon(Icons.Default.Place, null) },
+                                        singleLine = true
+                                    )
+
+                                    OutlinedTextField(
+                                        value = state.city,
+                                        onValueChange = viewModel::onCityChange,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("Населённый пункт") },
+                                        leadingIcon = { Icon(Icons.Default.LocationCity, null) },
+                                        singleLine = true
+                                    )
+                                    if (state.citySuggestions.isNotEmpty()) {
+                                        SuggestionsRow(state.citySuggestions, viewModel::onCitySuggestionClick)
+                                    }
+
+                                    OutlinedTextField(
+                                        value = state.street,
+                                        onValueChange = viewModel::onStreetChange,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("Улица") },
+                                        leadingIcon = { Icon(Icons.Default.Map, null) },
+                                        singleLine = true
+                                    )
+                                    if (state.streetSuggestions.isNotEmpty()) {
+                                        SuggestionsRow(state.streetSuggestions, viewModel::onStreetSuggestionClick)
+                                    }
+
+                                    OutlinedTextField(
+                                        value = state.house,
+                                        onValueChange = viewModel::onHouseChange,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text("Номер дома") },
+                                        leadingIcon = { Icon(Icons.Default.Home, null) },
+                                        singleLine = true
+                                    )
+
+                                    if (state.error != null) {
+                                        Text(
+                                            state.error,
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = viewModel::addPlace,
+                                        enabled = state.city.isNotBlank() || state.street.isNotBlank(),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Сохранить адрес")
+                                    }
+                                }
                             }
                         }
                     }
+
+                    if (state.places.isNotEmpty()) {
+                        // Группировка: Активные
+                        val activePlaces = state.places.filter { it.isEnabled }
+                        if (activePlaces.isNotEmpty()) {
+                            stickyHeader {
+                                SubHeader("Активные уведомления", Icons.Default.NotificationsActive)
+                            }
+                            items(activePlaces, key = { it.id }) { place ->
+                                TrackedPlaceItem(
+                                    modifier = Modifier.animateItem(),
+                                    place = place,
+                                    onToggle = { viewModel.togglePlaceEnabled(place, it) },
+                                    onEdit = { viewModel.startEditing(place) },
+                                    onDelete = { viewModel.onDeleteClick(place) }
+                                )
+                            }
+                        }
+
+                        // Группировка: Выключенные
+                        val inactivePlaces = state.places.filter { !it.isEnabled }
+                        if (inactivePlaces.isNotEmpty()) {
+                            stickyHeader {
+                                SubHeader("Выключено", Icons.Default.NotificationsOff)
+                            }
+                            items(inactivePlaces, key = { it.id }) { place ->
+                                TrackedPlaceItem(
+                                    modifier = Modifier.animateItem(),
+                                    place = place,
+                                    onToggle = { viewModel.togglePlaceEnabled(place, it) },
+                                    onEdit = { viewModel.startEditing(place) },
+                                    onDelete = { viewModel.onDeleteClick(place) }
+                                )
+                            }
+                        }
+
+                        item { Spacer(Modifier.size(Spacing.Large)) }
+                    }
+                }
+
+                if (state.places.isEmpty() && !state.isFormVisible) {
+                    EmptyPlacesState(
+                        onAddClick = viewModel::onToggleForm,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
             }
-
-            if (state.places.isEmpty()) {
-                item { EmptyPlacesState(onAddClick = viewModel::onToggleForm) }
-            } else {
-                // Группировка: Активные
-                val activePlaces = state.places.filter { it.isEnabled }
-                if (activePlaces.isNotEmpty()) {
-                    stickyHeader {
-                        SubHeader("Активные уведомления", Icons.Default.NotificationsActive)
-                    }
-                    items(activePlaces, key = { it.id }) { place ->
-                        TrackedPlaceItem(
-                            modifier = Modifier.animateItem(),
-                            place = place,
-                            onToggle = { viewModel.togglePlaceEnabled(place, it) },
-                            onEdit = { viewModel.startEditing(place) },
-                            onDelete = { viewModel.onDeleteClick(place) }
-                        )
-                    }
-                }
-
-                // Группировка: Выключенные
-                val inactivePlaces = state.places.filter { !it.isEnabled }
-                if (inactivePlaces.isNotEmpty()) {
-                    stickyHeader {
-                        SubHeader("Выключено", Icons.Default.NotificationsOff)
-                    }
-                    items(inactivePlaces, key = { it.id }) { place ->
-                        TrackedPlaceItem(
-                            modifier = Modifier.animateItem(),
-                            place = place,
-                            onToggle = { viewModel.togglePlaceEnabled(place, it) },
-                            onEdit = { viewModel.startEditing(place) },
-                            onDelete = { viewModel.onDeleteClick(place) }
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(Modifier.size(Spacing.Large)) }
         }
     }
 
@@ -252,8 +268,14 @@ private fun TrackedPlaceItem(
 }
 
 @Composable
-private fun EmptyPlacesState(onAddClick: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(Spacing.Large), horizontalAlignment = Alignment.CenterHorizontally) {
+private fun EmptyPlacesState(
+    onAddClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(Spacing.Large),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
         Spacer(Modifier.size(Spacing.Medium))
         Text("Список пуст", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
