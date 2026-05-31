@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Checkbox
@@ -35,9 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.component.SubHeader
@@ -77,6 +81,36 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = Spacing.Small)
                 )
             }
+
+            // Раздел: Тема оформления
+            item {
+                SubHeader(
+                    title = "Тема оформления",
+                    icon = Icons.Default.Palette
+                )
+            }
+
+            item {
+                Column {
+                    ThemeOption(
+                        title = "Системная",
+                        isSelected = state.selectedTheme == AppTheme.SYSTEM,
+                        onClick = { viewModel.setTheme(AppTheme.SYSTEM) }
+                    )
+                    ThemeOption(
+                        title = "Светлая",
+                        isSelected = state.selectedTheme == AppTheme.LIGHT,
+                        onClick = { viewModel.setTheme(AppTheme.LIGHT) }
+                    )
+                    ThemeOption(
+                        title = "Тёмная",
+                        isSelected = state.selectedTheme == AppTheme.DARK,
+                        onClick = { viewModel.setTheme(AppTheme.DARK) }
+                    )
+                }
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = Spacing.Small)) }
 
             // Раздел: Интервал обновления
             item {
@@ -268,7 +302,9 @@ fun SettingsScreen(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Large),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.Large),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                 ) {
                     SettingsRow(
@@ -339,6 +375,29 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ThemeOption(
+    title: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    SettingsRow(
+        onClick = onClick,
+        content = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        },
+        trailingContent = {
+            RadioButton(
+                selected = isSelected,
+                onClick = onClick
+            )
+        }
+    )
 }
 
 @Composable

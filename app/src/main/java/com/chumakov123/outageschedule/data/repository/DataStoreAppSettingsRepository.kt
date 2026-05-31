@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import com.chumakov123.outageschedule.data.settings.AppSettingsKeys
 import com.chumakov123.outageschedule.data.settings.dataStore
+import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -38,6 +39,16 @@ class DataStoreAppSettingsRepository(
                 ?: emptySet()
         }
 
+    override val selectedThemeFlow: Flow<AppTheme> =
+        context.dataStore.data.map { prefs ->
+            val themeName = prefs[AppSettingsKeys.SELECTED_THEME] ?: AppTheme.SYSTEM.name
+            try {
+                AppTheme.valueOf(themeName)
+            } catch (e: Exception) {
+                AppTheme.SYSTEM
+            }
+        }
+
     override suspend fun setNotificationLeadHours(hours: Set<Int>) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.NOTIFICATION_LEAD_HOURS] = hours.map { it.toString() }.toSet()
@@ -65,6 +76,12 @@ class DataStoreAppSettingsRepository(
     override suspend fun setOutageSyncIntervalHours(hours: Int) {
         context.dataStore.edit { prefs ->
             prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] = hours
+        }
+    }
+
+    override suspend fun setSelectedTheme(theme: AppTheme) {
+        context.dataStore.edit { prefs ->
+            prefs[AppSettingsKeys.SELECTED_THEME] = theme.name
         }
     }
 }

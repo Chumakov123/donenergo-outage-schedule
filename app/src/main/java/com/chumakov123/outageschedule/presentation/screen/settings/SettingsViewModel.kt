@@ -2,6 +2,7 @@ package com.chumakov123.outageschedule.presentation.screen.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
@@ -20,7 +21,8 @@ data class SettingsState(
     val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
     val syncIntervalHours: Int = 6,
     val notificationLeadHours: Set<Int> = setOf(24),
-    val isNotificationPermissionGranted: Boolean = false
+    val isNotificationPermissionGranted: Boolean = false,
+    val selectedTheme: AppTheme = AppTheme.SYSTEM
 )
 
 class SettingsViewModel(
@@ -61,6 +63,11 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.notificationLeadHoursFlow.collectLatest { hours ->
                 _state.update { it.copy(notificationLeadHours = hours) }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.selectedThemeFlow.collectLatest { theme ->
+                _state.update { it.copy(selectedTheme = theme) }
             }
         }
     }
@@ -121,6 +128,12 @@ class SettingsViewModel(
             }
 
             settingsRepository.setNotificationLeadHours(current)
+        }
+    }
+
+    fun setTheme(theme: AppTheme) {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.setSelectedTheme(theme)
         }
     }
 }

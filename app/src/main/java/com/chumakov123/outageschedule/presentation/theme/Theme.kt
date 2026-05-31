@@ -1,36 +1,57 @@
-// file: presentation/theme/Theme.kt
 package com.chumakov123.outageschedule.presentation.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import com.chumakov123.outageschedule.domain.model.AppTheme
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryBlue,
     secondary = SecondaryBlue,
-
     background = BackgroundDark,
     surface = SurfaceDark,
     surfaceVariant = SurfaceVariantDark,
+    onPrimary = TextPrimaryDark,
+    onSecondary = TextPrimaryDark,
+    onBackground = TextPrimaryDark,
+    onSurface = TextPrimaryDark,
+    onSurfaceVariant = TextSecondaryDark,
+    error = ErrorRed
+)
 
-    onPrimary = TextPrimary,
-    onSecondary = TextPrimary,
-
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary,
-
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryBlue,
+    secondary = SecondaryBlue,
+    background = BackgroundLight,
+    surface = SurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onPrimary = TextPrimaryLight,
+    onSecondary = TextPrimaryLight,
+    onBackground = TextPrimaryLight,
+    onSurface = TextPrimaryLight,
+    onSurfaceVariant = TextSecondaryLight,
     error = ErrorRed
 )
 
 @Composable
 fun OutageScheduleTheme(
+    appTheme: AppTheme = AppTheme.SYSTEM,
     content: @Composable () -> Unit
 ) {
-    SystemBarsController()
+    val darkTheme = when (appTheme) {
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+    }
+
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
+    SystemBarsController(darkTheme)
 
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = colorScheme,
         typography = Typography,
         shapes = Shapes,
         content = content
