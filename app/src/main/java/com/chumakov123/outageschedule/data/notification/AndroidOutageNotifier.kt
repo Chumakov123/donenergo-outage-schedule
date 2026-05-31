@@ -43,7 +43,7 @@ class AndroidOutageNotifier(
             context,
             NotificationChannels.OUTAGE_ALERTS_CHANNEL_ID
         )
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
