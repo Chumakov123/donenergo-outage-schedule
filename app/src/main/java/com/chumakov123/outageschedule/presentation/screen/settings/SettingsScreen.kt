@@ -1,6 +1,7 @@
 package com.chumakov123.outageschedule.presentation.screen.settings
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -15,17 +16,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +43,7 @@ import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.component.SubHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
+import androidx.core.net.toUri
 
 @Composable
 fun SettingsScreen(
@@ -230,6 +237,105 @@ fun SettingsScreen(
                         )
                     }
                 )
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = Spacing.Medium)) }
+
+            // Раздел: О программе
+            item {
+                SubHeader(
+                    title = "О программе",
+                    icon = Icons.Default.Info
+                )
+            }
+
+            item {
+                val versionName = remember {
+                    try {
+                        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            context.packageManager.getPackageInfo(
+                                context.packageName,
+                                PackageManager.PackageInfoFlags.of(0)
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            context.packageManager.getPackageInfo(context.packageName, 0)
+                        }
+                        packageInfo.versionName
+                    } catch (_: Exception) {
+                        "1.0"
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Large),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                ) {
+                    SettingsRow(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW,
+                                "https://github.com/Chumakov123/donenergo-outage-schedule".toUri())
+                            context.startActivity(intent)
+                        },
+                        content = {
+                            Column {
+                                Text(text = "GitHub", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = "Исходный код проекта",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Code,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+
+                    SettingsRow(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW,
+                                "https://www.donenergo.ru/grafik-otklyucheniy/".toUri())
+                            context.startActivity(intent)
+                        },
+                        content = {
+                            Column {
+                                Text(text = "Сайт ДонЭнерго", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = "Официальный график отключений",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+
+                    SettingsRow(
+                        onClick = {},
+                        content = {
+                            Column {
+                                Text(text = "Версия приложения", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = versionName ?: "1.0",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        trailingContent = {}
+                    )
+                }
             }
         }
     }
