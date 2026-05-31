@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -90,6 +91,14 @@ fun AllOutagesScreen(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                     ) {
+                        item {
+                            SectionHeader(
+                                title = "Отключения",
+                                icon = Icons.Default.Bolt,
+                                modifier = Modifier.padding(top = Spacing.Small)
+                            )
+                        }
+
                         // Поиск и Фильтр
                         item {
                             TopControls(
@@ -104,7 +113,7 @@ fun AllOutagesScreen(
                         if (state.error != null && state.outages.isEmpty()) {
                             item { ErrorState(message = state.error) }
                         } else if (state.emptyFilterMessage != null) {
-                            item { EmptyState(message = state.emptyFilterMessage!!) }
+                            item { EmptyState(message = state.emptyFilterMessage) }
                         }
 
                         groupedOutages.forEach { (city, outages) ->
@@ -126,6 +135,18 @@ fun AllOutagesScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.padding(horizontal = Spacing.Medium)
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.size(Spacing.Small))
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -263,11 +284,11 @@ private fun OutageItem(
             )
 
             if (!outage.reason.isNullOrBlank()) {
-                InfoRow(Icons.Default.ErrorOutline, outage.reason!!, MaterialTheme.colorScheme.onSurfaceVariant)
+                InfoRow(Icons.Default.ErrorOutline, outage.reason, MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             if (!outage.note.isNullOrBlank()) {
-                InfoRow(Icons.Default.Info, outage.note!!, MaterialTheme.colorScheme.secondary, FontStyle.Italic)
+                InfoRow(Icons.Default.Info, outage.note, MaterialTheme.colorScheme.secondary, FontStyle.Italic)
             }
         }
     }
