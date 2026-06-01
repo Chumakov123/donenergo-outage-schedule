@@ -9,9 +9,7 @@ plugins {
 
 android {
     namespace = "com.chumakov123.outageschedule"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.chumakov123.outageschedule"
@@ -38,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

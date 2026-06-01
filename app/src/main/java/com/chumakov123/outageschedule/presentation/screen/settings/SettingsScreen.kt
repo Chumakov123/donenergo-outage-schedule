@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Checkbox
@@ -36,16 +37,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.chumakov123.outageschedule.BuildConfig
 import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.component.SubHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
-import androidx.core.net.toUri
 
 @Composable
 fun SettingsScreen(
@@ -216,6 +218,34 @@ fun SettingsScreen(
                             Checkbox(
                                 checked = isChecked,
                                 onCheckedChange = { viewModel.toggleNotificationLeadHour(hours) }
+                            )
+                        }
+                    )
+                }
+            }
+
+            if (BuildConfig.DEBUG) {
+                item {
+                    SettingsRow(
+                        onClick = { viewModel.sendTestNotification() },
+                        content = {
+                            Column {
+                                Text(
+                                    text = "Проверить уведомление (Debug)",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "Отправить тестовое оповещение",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     )

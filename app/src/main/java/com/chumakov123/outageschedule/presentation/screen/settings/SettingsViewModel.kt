@@ -2,6 +2,7 @@ package com.chumakov123.outageschedule.presentation.screen.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chumakov123.outageschedule.domain.debug.DebugActions
 import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
@@ -29,7 +30,8 @@ class SettingsViewModel(
     private val permissionChecker: NotificationPermissionChecker,
     private val branchRepository: BranchRepository,
     private val localityRepository: BranchLocalityRepository,
-    private val settingsRepository: AppSettingsRepository
+    private val settingsRepository: AppSettingsRepository,
+    private val debugActions: DebugActions
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -135,5 +137,9 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.setSelectedTheme(theme)
         }
+    }
+
+    fun sendTestNotification() {
+        debugActions.sendTestNotification()
     }
 }

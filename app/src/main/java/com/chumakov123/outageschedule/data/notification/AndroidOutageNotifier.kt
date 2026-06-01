@@ -12,8 +12,6 @@ class AndroidOutageNotifier(
 ) : OutageNotifier {
 
     override fun show(outage: Outage, leadHours: Int, placeTitles: List<String>) {
-        val title = "Предстоящее отключение"
-
         val datePart = if (outage.startDate == outage.endDate) {
             outage.startDate
         } else {
@@ -22,22 +20,33 @@ class AndroidOutageNotifier(
 
         val timePart = when {
             !outage.startTime.isNullOrBlank() && !outage.endTime.isNullOrBlank() ->
-                "${outage.startTime} — ${outage.endTime}"
+                "с ${outage.startTime} до ${outage.endTime}"
             !outage.startTime.isNullOrBlank() -> "с ${outage.startTime}"
             !outage.endTime.isNullOrBlank() -> "до ${outage.endTime}"
             else -> ""
         }
 
-        val dateTimeHeader = if (timePart.isNotBlank()) "$datePart, $timePart" else datePart
-
         val addressesText = if (placeTitles.isNotEmpty()) {
             placeTitles.joinToString(", ")
         } else {
             val city = outage.city.trim()
-            if (city.isNotBlank()) "$city, ${outage.address.trim()}" else outage.address.trim()
+            if (city.isNotBlank()) {
+                "$city, ${outage.address.trim()}"
+            } else {
+                outage.address.trim()
+            }
         }
 
-        val text = "$dateTimeHeader\n$addressesText\nЧерез $leadHours ч."
+        val title = "Отключение через $leadHours ч."
+
+        val compactText = addressesText
+
+        val expandedText = buildString {
+            appendLine(addressesText)
+            appendLine()
+            appendLine(datePart)
+            appendLine(timePart)
+        }
 
         val notification = NotificationCompat.Builder(
             context,
@@ -45,8 +54,11 @@ class AndroidOutageNotifier(
         )
             .setSmallIcon(R.mipmap.ic_launcher_monochrome)
             .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentText(compactText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(expandedText)
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()

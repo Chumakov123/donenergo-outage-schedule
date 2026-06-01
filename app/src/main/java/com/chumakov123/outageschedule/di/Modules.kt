@@ -1,6 +1,9 @@
 package com.chumakov123.outageschedule.di
 
 import androidx.room.Room
+import com.chumakov123.outageschedule.BuildConfig
+import com.chumakov123.outageschedule.data.debug.NoOpDebugActions
+import com.chumakov123.outageschedule.data.debug.RealDebugActions
 import com.chumakov123.outageschedule.data.local.database.AppDatabase
 import com.chumakov123.outageschedule.data.notification.AndroidNotificationPermissionChecker
 import com.chumakov123.outageschedule.data.notification.AndroidOutageNotifier
@@ -14,6 +17,7 @@ import com.chumakov123.outageschedule.data.repository.DonEnergoOutageRepository
 import com.chumakov123.outageschedule.data.repository.RoomBranchLocalityRepository
 import com.chumakov123.outageschedule.data.repository.RoomNotificationLogRepository
 import com.chumakov123.outageschedule.data.repository.RoomTrackedPlaceRepository
+import com.chumakov123.outageschedule.domain.debug.DebugActions
 import com.chumakov123.outageschedule.domain.notification.OutageNotifier
 import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
 import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
@@ -100,6 +104,14 @@ val dataModule = module {
 
     single<OutageNotifier> { AndroidOutageNotifier(androidContext()) }
     single<NotificationPermissionChecker> { AndroidNotificationPermissionChecker(androidContext()) }
+
+    single<DebugActions> {
+        if (BuildConfig.DEBUG) {
+            RealDebugActions(outageNotifier = get())
+        } else {
+            NoOpDebugActions()
+        }
+    }
 }
 
 val domainModule = module {
