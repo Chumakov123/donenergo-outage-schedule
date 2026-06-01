@@ -7,7 +7,7 @@ class OutageHtmlParser {
 
     data class ParsedOutage(
         val city: String,
-        val address: String,
+        val address: String?,
         val startDate: String?,
         val endDate: String?,
         val startTime: String?,
@@ -26,14 +26,14 @@ class OutageHtmlParser {
             val cols = row.select("td")
             if (cols.size < 8) continue
 
-            val city = cols[1].meaningfulTextOrNull() ?: continue
-            val address = cols[2].meaningfulTextOrNull() ?: continue
+            val city = cols[1].meaningfulTextOrNull(requireLetter = true) ?: continue
+            val address = cols[2].meaningfulTextOrNull(requireLetter = true)
 
-            val startDate = cols[3].meaningfulTextOrNull()
-            val endDate = cols[4].meaningfulTextOrNull()
+            val startDate = cols[3].meaningfulTextOrNull(requireDigit = true)
+            val endDate = cols[4].meaningfulTextOrNull(requireDigit = true)
 
-            val startTime = cols[5].meaningfulTextOrNull()?.replace("=", ":")
-            val endTime = cols[6].meaningfulTextOrNull()?.replace("=", ":")
+            val startTime = cols[5].meaningfulTextOrNull(requireDigit = true)?.replace("=", ":")
+            val endTime = cols[6].meaningfulTextOrNull(requireDigit = true)?.replace("=", ":")
 
             val reason = cols[7].meaningfulTextOrNull()
             val note = if (cols.size > 8) cols[8].meaningfulTextOrNull() else null
@@ -55,15 +55,23 @@ class OutageHtmlParser {
         return result
     }
 
-    private fun Element.meaningfulTextOrNull(): String? {
+    private fun Element.meaningfulTextOrNull(
+        requireLetter: Boolean = false,
+        requireDigit: Boolean = false
+    ): String? {
         val text = text()
             .replace('\u00A0', ' ')
             .trim()
 
-        return text.takeIf { it.containsLetterOrDigit() }
+        if (text.isBlank()) return null
+        if (!text.containsLetterOrDigit()) return null
+        if (requireLetter && !text.containsLetter()) return null
+        if (requireDigit && !text.containsDigit()) return null
+
+        return text
     }
 
-    private fun String.containsLetterOrDigit(): Boolean {
-        return any { it.isLetterOrDigit() }
-    }
+    private fun String.containsLetterOrDigit(): Boolean = any { it.isLetterOrDigit() }
+    private fun String.containsLetter(): Boolean = any { it.isLetter() }
+    private fun String.containsDigit(): Boolean = any { it.isDigit() }
 }

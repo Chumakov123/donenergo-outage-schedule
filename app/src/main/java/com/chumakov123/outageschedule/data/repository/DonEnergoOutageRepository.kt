@@ -37,7 +37,7 @@ class DonEnergoOutageRepository(
         val html = remote.fetchHtml(branchUrl)
         val doc = Jsoup.parse(html)
         return parser.parse(doc).mapNotNull { parsed ->
-            if (parsed.startDate != null && parsed.endDate != null) {
+            if (parsed.startDate != null && parsed.endDate != null && parsed.address != null) {
                 Outage(
                     city = parsed.city,
                     address = parsed.address,
@@ -67,7 +67,7 @@ class DonEnergoOutageRepository(
                     val nowDateTime = LocalDateTime.now()
 
                     val domainOutages = parsedOutages.mapNotNull { parsed ->
-                        if (parsed.startDate != null && parsed.endDate != null) {
+                        if (parsed.startDate != null && parsed.endDate != null  && parsed.address != null) {
                             val outage = Outage(
                                 city = parsed.city,
                                 address = parsed.address,
@@ -165,12 +165,15 @@ class DonEnergoOutageRepository(
         parsedOutages.forEach { outage ->
             add(outage.city, null)
 
-            AddressSegmentParser.splitCandidates(outage.address).forEach { segment ->
-                val street = segment.streetText.trim()
-                if (street.isNotBlank()) {
-                    add(outage.city, street)
+            outage.address
+                ?.let { AddressSegmentParser.splitCandidates(it) }
+                .orEmpty()
+                .forEach { segment ->
+                    val street = segment.streetText.trim()
+                    if (street.isNotBlank()) {
+                        add(outage.city, street)
+                    }
                 }
-            }
         }
 
         return result.values.toList()
