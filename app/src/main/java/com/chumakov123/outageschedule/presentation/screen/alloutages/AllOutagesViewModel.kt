@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
@@ -73,9 +74,8 @@ class AllOutagesViewModel(
 
     fun onRefresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
-                refresh(urls)
-            }
+            val urls = settingsRepository.selectedBranchUrlsFlow.first()
+            refresh(urls)
         }
     }
 
