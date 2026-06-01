@@ -1,6 +1,7 @@
 package com.chumakov123.outageschedule.data.remote.parser
 
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 
 class OutageHtmlParser {
 
@@ -16,33 +17,26 @@ class OutageHtmlParser {
     )
 
     fun parse(document: Document): List<ParsedOutage> {
-
         val result = mutableListOf<ParsedOutage>()
-
         val rows = document.select("table.table_site1 tbody tr")
 
         for (row in rows) {
-
             if (row.select("th").isNotEmpty()) continue
 
             val cols = row.select("td")
-
             if (cols.size < 8) continue
 
-            val city = cols[1].text().trim()
-            val address = cols[2].text().trim()
+            val city = cols[1].meaningfulTextOrNull() ?: continue
+            val address = cols[2].meaningfulTextOrNull() ?: continue
 
-            if (city.matches(Regex("\\d+"))) continue
-            if (address.matches(Regex("\\d+"))) continue
+            val startDate = cols[3].meaningfulTextOrNull()
+            val endDate = cols[4].meaningfulTextOrNull()
 
-            val startDate = cols[3].text().trim().takeIf { it.isNotEmpty() }
-            val endDate = cols[4].text().trim().takeIf { it.isNotEmpty() }
+            val startTime = cols[5].meaningfulTextOrNull()?.replace("=", ":")
+            val endTime = cols[6].meaningfulTextOrNull()?.replace("=", ":")
 
-            val startTime = cols[5].text().trim().replace("=", ":")
-            val endTime = cols[6].text().trim().replace("=", ":")
-
-            val reason = cols[7].text().trim()
-            val note = if (cols.size > 8) cols[8].text().trim().takeIf { it.isNotEmpty() } else null
+            val reason = cols[7].meaningfulTextOrNull()
+            val note = if (cols.size > 8) cols[8].meaningfulTextOrNull() else null
 
             result.add(
                 ParsedOutage(
@@ -59,5 +53,17 @@ class OutageHtmlParser {
         }
 
         return result
+    }
+
+    private fun Element.meaningfulTextOrNull(): String? {
+        val text = text()
+            .replace('\u00A0', ' ')
+            .trim()
+
+        return text.takeIf { it.containsLetterOrDigit() }
+    }
+
+    private fun String.containsLetterOrDigit(): Boolean {
+        return any { it.isLetterOrDigit() }
     }
 }
