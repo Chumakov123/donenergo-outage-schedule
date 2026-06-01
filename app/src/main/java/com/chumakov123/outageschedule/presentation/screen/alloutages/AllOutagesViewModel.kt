@@ -17,6 +17,7 @@ import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
 import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -53,6 +54,9 @@ class AllOutagesViewModel(
     private val _state = MutableStateFlow(AllOutagesState())
     val state: StateFlow<AllOutagesState> = _state
 
+    private val lastRefreshTimes = mutableMapOf<String, Long>()
+    private val REFRESH_THRESHOLD = 5 * 60 * 1000L
+
     init {
         refreshOnSelectionChange()
         observeData()
@@ -81,12 +85,32 @@ class AllOutagesViewModel(
 
     private suspend fun refresh(urls: Set<String>) {
         if (urls.isEmpty()) return
+
+        val currentTime = System.currentTimeMillis()
+        
+        val staleUrls = urls.filter { url ->
+            val lastTime = lastRefreshTimes[url] ?: 0L
+            currentTime - lastTime >= REFRESH_THRESHOLD
+        }
+
+        if (staleUrls.isEmpty() && !_state.value.isLoading) {
+            _state.update { it.copy(isRefreshing = true) }
+            delay(600)
+            _state.update { it.copy(isRefreshing = false) }
+            return
+        }
+
         _state.update { it.copy(isRefreshing = true) }
         runCatching {
             val branchMap = branchRepository.getBranches().associateBy { it.url }
-            val branches = urls.mapNotNull { branchMap[it] }
-            if (branches.isNotEmpty()) {
-                outageRepository.refreshOutages(branches)
+            val branchesToFetch = urls.filter { url ->
+                _state.value.isLoading || (currentTime - (lastRefreshTimes[url] ?: 0L) >= REFRESH_THRESHOLD)
+            }.mapNotNull { branchMap[it] }
+
+            if (branchesToFetch.isNotEmpty()) {
+                outageRepository.refreshOutages(branchesToFetch)
+                val now = System.currentTimeMillis()
+                branchesToFetch.forEach { lastRefreshTimes[it.url] = now }
             }
         }.onFailure { throwable ->
             _state.update { it.copy(error = throwable.message) }
