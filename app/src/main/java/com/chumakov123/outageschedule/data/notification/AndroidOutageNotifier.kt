@@ -1,11 +1,14 @@
 package com.chumakov123.outageschedule.data.notification
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.notification.OutageNotifier
+import com.chumakov123.outageschedule.presentation.MainActivity
 
 class AndroidOutageNotifier(
     private val context: Context
@@ -48,6 +51,16 @@ class AndroidOutageNotifier(
             appendLine(timePart)
         }
 
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(
             context,
             NotificationChannels.OUTAGE_ALERTS_CHANNEL_ID
@@ -60,6 +73,7 @@ class AndroidOutageNotifier(
                     .bigText(expandedText)
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
 
