@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.notification.OutageNotifier
@@ -65,7 +66,8 @@ class AndroidOutageNotifier(
             context,
             NotificationChannels.OUTAGE_ALERTS_CHANNEL_ID
         )
-            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_outage)
+            .setColor(ContextCompat.getColor(context, R.color.purple_500))
             .setContentTitle(title)
             .setContentText(compactText)
             .setStyle(
