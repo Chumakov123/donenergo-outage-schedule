@@ -33,7 +33,7 @@ fun AppScaffold(
     val context = LocalContext.current
     val settingsRepository: AppSettingsRepository = koinInject()
 
-    val syncIntervalHours by settingsRepository.outageSyncIntervalHoursFlow.collectAsState(initial = 6)
+    val syncIntervalHours by settingsRepository.outageSyncIntervalHoursFlow.collectAsState(initial = 24)
 
     LaunchedEffect(entryState.isLoading, entryState.isOnboardingCompleted, syncIntervalHours) {
         if (entryState.isLoading) return@LaunchedEffect

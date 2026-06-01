@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
@@ -247,39 +248,84 @@ private fun TrackedPlaceItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val fullAddress = buildString {
+        append(place.city)
+        if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
+        append(place.street)
+        if (place.house.isNotBlank()) append(", ${place.house}")
+    }
+
+    val hasCustomTitle = place.title.isNotBlank() && place.title != fullAddress
+    val displayTitle = if (hasCustomTitle) place.title else fullAddress
+    val displaySubtitle = if (hasCustomTitle) fullAddress else null
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.Medium, vertical = 2.dp),
+            .padding(horizontal = Spacing.Medium, vertical = 4.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .animateContentSize()
-                .padding(Spacing.Medium),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = Spacing.Medium, top = Spacing.Medium, end = Spacing.Small, bottom = Spacing.Small)
         ) {
-            Switch(checked = place.isEnabled, onCheckedChange = onToggle)
-            Spacer(Modifier.size(Spacing.Medium))
-            Column(modifier = Modifier.weight(1f)) {
-                val fullAddress = buildString {
-                    append(place.city)
-                    if (place.city.isNotBlank() && place.street.isNotBlank()) append(", ")
-                    append(place.street)
-                    if (place.house.isNotBlank()) append(", ${place.house}")
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = displayTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (displaySubtitle != null) {
+                        Text(
+                            text = displaySubtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
                 }
-                if (place.title.isNotBlank() && place.title != fullAddress) {
-                    Text(place.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(fullAddress, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    Text(fullAddress, style = MaterialTheme.typography.titleMedium)
+
+                Switch(
+                    checked = place.isEnabled,
+                    onCheckedChange = onToggle,
+                    modifier = Modifier.padding(start = Spacing.Small)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Редактировать",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "Удалить",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
                 }
             }
-            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline) }
-            IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteSweep, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error) }
         }
     }
 }
