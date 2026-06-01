@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddHome
-import androidx.compose.material.icons.filled.AddLocationAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -76,10 +76,12 @@ fun TrackedPlacesScreen(
                     modifier = Modifier.padding(horizontal = 0.dp)
                 )
 
-                TextButton(onClick = viewModel::onToggleForm) {
-                    Icon(if (state.isFormVisible) Icons.Default.AddLocationAlt else Icons.Default.AddHome, null)
-                    Spacer(Modifier.size(4.dp))
-                    Text(if (state.isFormVisible) "Свернуть" else "Добавить")
+                IconButton(onClick = viewModel::onToggleForm) {
+                    Icon(
+                        imageVector = if (state.isFormVisible) Icons.Default.Close else Icons.Default.AddHome,
+                        contentDescription = if (state.isFormVisible) "Свернуть" else "Добавить",
+                        tint = if (state.isFormVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
 
@@ -108,7 +110,7 @@ fun TrackedPlacesScreen(
                                         value = state.title,
                                         onValueChange = viewModel::onTitleChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        label = { Text("Название (Дом, Работа...)") },
+                                        label = { Text("Название") },
                                         leadingIcon = { Icon(Icons.Default.Place, null) },
                                         singleLine = true
                                     )

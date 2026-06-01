@@ -19,10 +19,10 @@ data class SettingsState(
     val branches: List<Branch> = emptyList(),
     val selectedUrls: Set<String> = emptySet(),
     val citySuggestionsByBranchUrl: Map<String, List<String>> = emptyMap(),
-    val syncIntervalHours: Int = 6,
-    val notificationLeadHours: Set<Int> = setOf(24),
+    val syncIntervalHours: Int = 24,
+    val notificationLeadHours: Set<Int> = setOf(12, 24, 48),
     val isNotificationPermissionGranted: Boolean = false,
-    val selectedTheme: AppTheme = AppTheme.SYSTEM
+    val selectedTheme: AppTheme = AppTheme.DARK
 )
 
 class SettingsViewModel(

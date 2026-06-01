@@ -25,27 +25,27 @@ class DataStoreAppSettingsRepository(
 
     override val onlyTrackedPlacesFlow: Flow<Boolean> =
         context.dataStore.data.map { prefs ->
-            prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] ?: false
+            prefs[AppSettingsKeys.FILTER_ONLY_TRACKED_PLACES] ?: true
         }
 
     override val outageSyncIntervalHoursFlow: Flow<Int> =
         context.dataStore.data.map { prefs ->
-            prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] ?: 6
+            prefs[AppSettingsKeys.OUTAGE_SYNC_INTERVAL_HOURS] ?: 24
         }
 
     override val notificationLeadHoursFlow: Flow<Set<Int>> =
         context.dataStore.data.map { prefs ->
             prefs[AppSettingsKeys.NOTIFICATION_LEAD_HOURS]?.mapNotNull { it.toIntOrNull() }?.toSet()
-                ?: emptySet()
+                ?: setOf(12, 24, 48)
         }
 
     override val selectedThemeFlow: Flow<AppTheme> =
         context.dataStore.data.map { prefs ->
-            val themeName = prefs[AppSettingsKeys.SELECTED_THEME] ?: AppTheme.SYSTEM.name
+            val themeName = prefs[AppSettingsKeys.SELECTED_THEME] ?: AppTheme.DARK.name
             try {
                 AppTheme.valueOf(themeName)
             } catch (e: Exception) {
-                AppTheme.SYSTEM
+                AppTheme.DARK
             }
         }
 

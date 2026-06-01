@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -119,7 +120,7 @@ fun SettingsScreen(
             }
 
             item {
-                listOf(6, 12, 24).forEach { hours ->
+                listOf(12, 24, 48).forEach { hours ->
                     val isSelected = state.syncIntervalHours == hours
                     SettingsRow(
                         onClick = { viewModel.setSyncInterval(hours) },

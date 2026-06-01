@@ -35,7 +35,7 @@ data class AllOutagesState(
     val searchQuery: String = "",
     val isSearchVisible: Boolean = false,
     val isSearchEnabled: Boolean = false,
-    val onlyTrackedPlaces: Boolean = false,
+    val onlyTrackedPlaces: Boolean = true,
     val emptyFilterMessage: String? = null,
     val emptyFilterIcon: ImageVector? = null,
     val trackedPlaces: List<TrackedPlace> = emptyList()
