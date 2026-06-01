@@ -38,6 +38,7 @@ data class AllOutagesState(
     val onlyTrackedPlaces: Boolean = true,
     val emptyFilterMessage: String? = null,
     val emptyFilterIcon: ImageVector? = null,
+    val showTrackedPlacesAction: Boolean = false,
     val trackedPlaces: List<TrackedPlace> = emptyList()
 )
 
@@ -159,6 +160,10 @@ class AllOutagesViewModel(
             }
         }
 
+        val showTrackedPlacesAction = onlyTrackedPlaces && (
+                trackedPlaces.isEmpty() || activePlaces.isEmpty()
+                )
+
         val (emptyMessage, emptyIcon) = when {
             onlyTrackedPlaces && trackedPlaces.isEmpty() ->
                 "Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»" to Icons.Default.LocationOn
@@ -179,7 +184,8 @@ class AllOutagesViewModel(
             isSearchEnabled = canSearch,
             searchQuery = effectiveSearchQuery,
             emptyFilterMessage = emptyMessage,
-            emptyFilterIcon = emptyIcon
+            emptyFilterIcon = emptyIcon,
+            showTrackedPlacesAction = showTrackedPlacesAction
         )
     }
 

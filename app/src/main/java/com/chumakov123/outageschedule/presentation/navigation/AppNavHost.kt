@@ -1,7 +1,9 @@
 package com.chumakov123.outageschedule.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,6 +11,8 @@ import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesS
 import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingScreen
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsScreen
 import com.chumakov123.outageschedule.presentation.screen.trackedplaces.TrackedPlacesScreen
+
+private const val OPEN_TRACKED_PLACES_FORM_KEY = "open_tracked_places_form"
 
 @Composable
 fun AppNavHost(
@@ -21,7 +25,6 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
-
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
                 onFinish = {
@@ -33,16 +36,36 @@ fun AppNavHost(
         }
 
         composable(Screen.AllOutages.route) {
-            AllOutagesScreen()
+            AllOutagesScreen(
+                onOpenTrackedPlaces = { openForm ->
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(OPEN_TRACKED_PLACES_FORM_KEY, openForm)
+
+                    navController.navigate(Screen.TrackedPlaces.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
         }
 
         composable(Screen.TrackedPlaces.route) {
-            TrackedPlacesScreen()
-        }
+            val openFormOnEnter = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<Boolean>(OPEN_TRACKED_PLACES_FORM_KEY) == true
 
-//        composable(Screen.History.route) {
-//            HistoryScreen()
-//        }
+            LaunchedEffect(openFormOnEnter) {
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.remove<Boolean>(OPEN_TRACKED_PLACES_FORM_KEY)
+            }
+
+            TrackedPlacesScreen(openFormOnEnter = openFormOnEnter)
+        }
 
         composable(Screen.Settings.route) {
             SettingsScreen()

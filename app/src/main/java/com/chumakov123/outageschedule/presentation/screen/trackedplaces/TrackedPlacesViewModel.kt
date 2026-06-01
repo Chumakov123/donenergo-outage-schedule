@@ -132,6 +132,14 @@ class TrackedPlacesViewModel(
             .toList()
     }
 
+    fun openForm() {
+        _state.update { current ->
+            if (current.isFormVisible) current
+            else current.copy(isFormVisible = true, error = null)
+        }
+        refreshSuggestions()
+    }
+
     fun onToggleForm() {
         _state.update { it.copy(isFormVisible = !it.isFormVisible, error = null) }
         if (_state.value.isFormVisible) {

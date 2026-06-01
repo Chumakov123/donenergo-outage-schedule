@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,12 +52,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
-import com.chumakov123.outageschedule.presentation.component.EmptyState
 import com.chumakov123.outageschedule.presentation.component.ErrorState
 import com.chumakov123.outageschedule.presentation.component.LoadingState
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
@@ -72,13 +73,13 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AllOutagesScreen(
+    onOpenTrackedPlaces: (Boolean) -> Unit,
     viewModel: AllOutagesViewModel = koinViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
 
     ScreenContainer {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Floating Header Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,7 +121,6 @@ fun AllOutagesScreen(
                 }
             }
 
-            // Floating Search Panel
             AnimatedVisibility(
                 visible = state.isSearchVisible,
                 enter = expandVertically() + fadeIn(),
@@ -141,49 +141,67 @@ fun AllOutagesScreen(
                         isRefreshing = state.isRefreshing,
                         onRefresh = { viewModel.onRefresh() }
                     ) {
-                        // Centered States (Error or Empty Message)
-                        if (state.error != null && state.outages.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ErrorState(message = state.error)
-                            }
-                        } else if (state.emptyFilterMessage != null) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                EmptyState(
-                                    message = state.emptyFilterMessage,
-                                    icon = state.emptyFilterIcon ?: Icons.Default.Info
-                                )
-                            }
-                        }
-
-                        val groupedOutages = state.outages
-                            .sortedWith(
-                                compareBy(
-                                    { parseDateTime(it) ?: LocalDateTime.MAX },
-                                    { it.address.lowercase() }
-                                )
-                            )
-                            .groupBy { it.city.trim() }
-
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
-                        ) {
-                            groupedOutages.forEach { (city, outages) ->
-                                stickyHeader {
-                                    CityHeader(city)
+                        when {
+                            state.error != null && state.outages.isEmpty() -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    ErrorState(message = state.error)
                                 }
+                            }
 
-                                items(outages, key = { it.buildId() }) { outage ->
-                                    OutageItem(
-                                        modifier = Modifier.animateItem(),
-                                        outage = outage,
-                                        trackedPlaces = state.trackedPlaces
+                            state.emptyFilterMessage != null -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    EmptyTrackedPlacesState(
+                                        message = state.emptyFilterMessage,
+                                        actionText = if (state.trackedPlaces.isEmpty()) {
+                                            "Добавить адрес"
+                                        } else {
+                                            "Открыть мои адреса"
+                                        },
+                                        onActionClick = {
+                                            onOpenTrackedPlaces(state.trackedPlaces.isEmpty())
+                                        }
                                     )
                                 }
                             }
 
-                            if (state.outages.isNotEmpty()) {
-                                item { Spacer(modifier = Modifier.size(Spacing.Large)) }
+                            else -> {
+                                val groupedOutages = state.outages
+                                    .sortedWith(
+                                        compareBy(
+                                            { parseDateTime(it) ?: LocalDateTime.MAX },
+                                            { it.address.lowercase() }
+                                        )
+                                    )
+                                    .groupBy { it.city.trim() }
+
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                                ) {
+                                    groupedOutages.forEach { (city, outages) ->
+                                        stickyHeader {
+                                            CityHeader(city)
+                                        }
+
+                                        items(outages, key = { it.buildId() }) { outage ->
+                                            OutageItem(
+                                                modifier = Modifier.animateItem(),
+                                                outage = outage,
+                                                trackedPlaces = state.trackedPlaces
+                                            )
+                                        }
+                                    }
+
+                                    if (state.outages.isNotEmpty()) {
+                                        item { Spacer(modifier = Modifier.size(Spacing.Large)) }
+                                    }
+                                }
                             }
                         }
                     }
@@ -342,6 +360,40 @@ private fun StatusBadge(status: OutageStatus) {
         border = null,
         modifier = Modifier.size(height = 32.dp, width = 120.dp)
     )
+}
+
+@Composable
+private fun EmptyTrackedPlacesState(
+    message: String,
+    actionText: String,
+    onActionClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(Spacing.Large),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+        Spacer(Modifier.size(Spacing.Small))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.size(Spacing.Medium))
+        Button(
+            onClick = onActionClick
+        ) {
+            Text(actionText)
+        }
+    }
 }
 
 private fun buildHighlightedAddress(address: String, highlights: List<String>) = buildAnnotatedString {

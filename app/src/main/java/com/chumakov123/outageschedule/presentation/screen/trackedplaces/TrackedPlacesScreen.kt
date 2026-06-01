@@ -40,6 +40,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +58,16 @@ import org.koin.androidx.compose.koinViewModel
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackedPlacesScreen(
+    openFormOnEnter: Boolean = false,
     viewModel: TrackedPlacesViewModel = koinViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
+
+    LaunchedEffect(openFormOnEnter) {
+        if (openFormOnEnter) {
+            viewModel.openForm()
+        }
+    }
 
     ScreenContainer {
         Column(modifier = Modifier.fillMaxSize()) {
