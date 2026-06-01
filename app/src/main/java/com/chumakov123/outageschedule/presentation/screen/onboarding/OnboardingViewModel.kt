@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -33,7 +34,7 @@ class OnboardingViewModel(
 
     init {
         loadBranches()
-        observeSavedSelection()
+        loadSavedSelection()
         observeLocalities()
     }
 
@@ -49,12 +50,11 @@ class OnboardingViewModel(
         }
     }
 
-    private fun observeSavedSelection() {
+    private fun loadSavedSelection() {
         viewModelScope.launch(Dispatchers.IO) {
-            settings.selectedBranchUrlsFlow.collectLatest { savedUrls ->
-                if (savedUrls.isNotEmpty()) {
-                    _state.update { it.copy(selectedUrls = savedUrls) }
-                }
+            val savedUrls = settings.selectedBranchUrlsFlow.first()
+            if (savedUrls.isNotEmpty()) {
+                _state.update { it.copy(selectedUrls = savedUrls) }
             }
         }
     }
