@@ -24,9 +24,9 @@ class AndroidOutageNotifier(
 
         val timePart = when {
             !outage.startTime.isNullOrBlank() && !outage.endTime.isNullOrBlank() ->
-                "с ${outage.startTime} до ${outage.endTime}"
-            !outage.startTime.isNullOrBlank() -> "с ${outage.startTime}"
-            !outage.endTime.isNullOrBlank() -> "до ${outage.endTime}"
+                context.getString(R.string.notification_time_range, outage.startTime, outage.endTime)
+            !outage.startTime.isNullOrBlank() -> context.getString(R.string.notification_time_from, outage.startTime)
+            !outage.endTime.isNullOrBlank() -> context.getString(R.string.notification_time_to, outage.endTime)
             else -> ""
         }
 
@@ -41,7 +41,8 @@ class AndroidOutageNotifier(
             }
         }
 
-        val title = "Отключение через $leadHours ч."
+        val leadTimeText = context.resources.getQuantityString(R.plurals.hour, leadHours, leadHours)
+        val title = context.getString(R.string.notification_title_upcoming, leadTimeText)
 
         val compactText = addressesText
 

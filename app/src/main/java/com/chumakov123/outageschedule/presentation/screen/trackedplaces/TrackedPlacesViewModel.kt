@@ -2,9 +2,11 @@ package com.chumakov123.outageschedule.presentation.screen.trackedplaces
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.BranchLocality
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.domain.usecase.*
+import com.chumakov123.outageschedule.presentation.util.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +21,7 @@ data class TrackedPlacesState(
     val city: String = "",
     val street: String = "",
     val house: String = "",
-    val error: String? = null,
+    val error: UiText? = null,
     val citySuggestions: List<String> = emptyList(),
     val streetSuggestions: List<String> = emptyList(),
     val suggestionsLoading: Boolean = true,
@@ -29,7 +31,7 @@ data class TrackedPlacesState(
     val editCity: String = "",
     val editStreet: String = "",
     val editHouse: String = "",
-    val editError: String? = null,
+    val editError: UiText? = null,
     
     val deletingPlace: TrackedPlace? = null
 )
@@ -155,7 +157,7 @@ class TrackedPlacesViewModel(
         val street = current.street.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(error = "Укажите город или улицу") }
+            _state.update { it.copy(error = UiText.StringResource(R.string.tracked_places_error_empty_fields)) }
             return
         }
 
@@ -186,7 +188,7 @@ class TrackedPlacesViewModel(
                 ) }
                 refreshSuggestions()
             } catch (e: Exception) {
-                _state.update { it.copy(error = "Ошибка при сохранении: ${e.message}") }
+                _state.update { it.copy(error = UiText.StringResource(R.string.tracked_places_error_save_failed, e.message ?: "")) }
             }
         }
     }
@@ -249,7 +251,7 @@ class TrackedPlacesViewModel(
         val street = current.editStreet.trim()
 
         if (city.isBlank() && street.isBlank()) {
-            _state.update { it.copy(editError = "Укажите город или улицу") }
+            _state.update { it.copy(editError = UiText.StringResource(R.string.tracked_places_error_empty_fields)) }
             return
         }
 
@@ -274,7 +276,7 @@ class TrackedPlacesViewModel(
                 _state.update { it.copy(editingPlaceId = null, editError = null) }
                 refreshSuggestions()
             } catch (e: Exception) {
-                _state.update { it.copy(editError = "Ошибка при сохранении: ${e.message}") }
+                _state.update { it.copy(editError = UiText.StringResource(R.string.tracked_places_error_save_failed, e.message ?: "")) }
             }
         }
     }

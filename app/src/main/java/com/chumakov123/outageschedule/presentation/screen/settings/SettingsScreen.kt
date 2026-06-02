@@ -37,11 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.chumakov123.outageschedule.BuildConfig
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
@@ -76,7 +79,7 @@ fun SettingsScreen(
         ) {
             item {
                 SectionHeader(
-                    title = "Настройки",
+                    title = stringResource(R.string.settings_title),
                     icon = Icons.Default.Settings,
                     modifier = Modifier.padding(top = Spacing.Small)
                 )
@@ -85,7 +88,7 @@ fun SettingsScreen(
             // Раздел: Тема оформления
             item {
                 SubHeader(
-                    title = "Тема оформления",
+                    title = stringResource(R.string.settings_section_theme),
                     icon = Icons.Default.Palette
                 )
             }
@@ -93,17 +96,17 @@ fun SettingsScreen(
             item {
                 Column {
                     ThemeOption(
-                        title = "Системная",
+                        title = stringResource(R.string.settings_theme_system),
                         isSelected = state.selectedTheme == AppTheme.SYSTEM,
                         onClick = { viewModel.setTheme(AppTheme.SYSTEM) }
                     )
                     ThemeOption(
-                        title = "Светлая",
+                        title = stringResource(R.string.settings_theme_light),
                         isSelected = state.selectedTheme == AppTheme.LIGHT,
                         onClick = { viewModel.setTheme(AppTheme.LIGHT) }
                     )
                     ThemeOption(
-                        title = "Тёмная",
+                        title = stringResource(R.string.settings_theme_dark),
                         isSelected = state.selectedTheme == AppTheme.DARK,
                         onClick = { viewModel.setTheme(AppTheme.DARK) }
                     )
@@ -115,7 +118,7 @@ fun SettingsScreen(
             // Раздел: Интервал обновления
             item {
                 SubHeader(
-                    title = "Интервал обновления",
+                    title = stringResource(R.string.settings_section_update_interval),
                     icon = Icons.Default.Sync
                 )
             }
@@ -128,11 +131,14 @@ fun SettingsScreen(
                         content = {
                             Column {
                                 Text(
-                                    text = "Каждые $hours ${hours.hoursLabel()}",
+                                    text = stringResource(
+                                        R.string.settings_update_interval_value,
+                                        pluralStringResource(R.plurals.hour, hours, hours)
+                                    ),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = if (isSelected) "Выбрано" else "Нажмите для выбора",
+                                    text = stringResource(if (isSelected) R.string.settings_selection_selected else R.string.settings_selection_hint),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -153,7 +159,7 @@ fun SettingsScreen(
             // Раздел: Уведомления
             item {
                 SubHeader(
-                    title = "Уведомления",
+                    title = stringResource(R.string.settings_section_notifications),
                     icon = Icons.Default.NotificationsActive
                 )
             }
@@ -172,11 +178,11 @@ fun SettingsScreen(
                         content = {
                             Column {
                                 Text(
-                                    text = "Разрешить уведомления",
+                                    text = stringResource(R.string.settings_action_grant_notifications),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = if (state.isNotificationPermissionGranted) "Разрешено" else "Требуется разрешение",
+                                    text = stringResource(if (state.isNotificationPermissionGranted) R.string.settings_notification_granted else R.string.settings_notification_required),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (state.isNotificationPermissionGranted)
                                         MaterialTheme.colorScheme.primary
@@ -196,7 +202,7 @@ fun SettingsScreen(
 
             item {
                 Text(
-                    text = "За какое время предупреждать об отключении:",
+                    text = stringResource(R.string.settings_notifications_lead_time_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
@@ -210,7 +216,10 @@ fun SettingsScreen(
                         onClick = { viewModel.toggleNotificationLeadHour(hours) },
                         content = {
                             Text(
-                                text = "За $hours часов",
+                                text = stringResource(
+                                    R.string.settings_notifications_lead_time_value,
+                                    pluralStringResource(R.plurals.hour, hours, hours)
+                                ),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         },
@@ -231,11 +240,11 @@ fun SettingsScreen(
                         content = {
                             Column {
                                 Text(
-                                    text = "Проверить уведомление (Debug)",
+                                    text = stringResource(R.string.settings_action_check_notification_debug),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Отправить тестовое оповещение",
+                                    text = stringResource(R.string.settings_action_test_notification),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -257,14 +266,14 @@ fun SettingsScreen(
             // Раздел: Филиалы
             item {
                 SubHeader(
-                    title = "Филиалы",
+                    title = stringResource(R.string.settings_section_branches),
                     icon = Icons.Default.Business
                 )
             }
 
             item {
                 Text(
-                    text = "Выберите филиалы для отслеживания отключений:",
+                    text = stringResource(R.string.settings_branches_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
@@ -306,7 +315,7 @@ fun SettingsScreen(
             // Раздел: О программе
             item {
                 SubHeader(
-                    title = "О программе",
+                    title = stringResource(R.string.settings_section_about),
                     icon = Icons.Default.Info
                 )
             }
@@ -345,7 +354,7 @@ fun SettingsScreen(
                             Column {
                                 Text(text = "GitHub", style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    text = "Исходный код проекта",
+                                    text = stringResource(R.string.settings_about_source_code),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -368,9 +377,9 @@ fun SettingsScreen(
                         },
                         content = {
                             Column {
-                                Text(text = "Сайт ДонЭнерго", style = MaterialTheme.typography.bodyLarge)
+                                Text(text = stringResource(R.string.settings_about_website), style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    text = "Официальный график отключений",
+                                    text = stringResource(R.string.settings_about_official_schedule),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -389,7 +398,7 @@ fun SettingsScreen(
                         onClick = {},
                         content = {
                             Column {
-                                Text(text = "Версия приложения", style = MaterialTheme.typography.bodyLarge)
+                                Text(text = stringResource(R.string.settings_about_version), style = MaterialTheme.typography.bodyLarge)
                                 Text(
                                     text = versionName ?: "1.0",
                                     style = MaterialTheme.typography.bodySmall,
@@ -446,17 +455,5 @@ private fun SettingsRow(
             content()
         }
         trailingContent()
-    }
-}
-
-private fun Int.hoursLabel(): String {
-    val mod10 = this % 10
-    val mod100 = this % 100
-
-    return when {
-        mod100 in 11..14 -> "часов"
-        mod10 == 1 -> "час"
-        mod10 in 2..4 -> "часа"
-        else -> "часов"
     }
 }

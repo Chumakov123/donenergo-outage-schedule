@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
@@ -71,6 +73,7 @@ import com.chumakov123.outageschedule.presentation.component.LoadingState
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
+import com.chumakov123.outageschedule.presentation.util.UiText
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -96,7 +99,7 @@ fun AllOutagesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SectionHeader(
-                    title = "Отключения",
+                    title = stringResource(R.string.outages_title),
                     icon = Icons.Default.Bolt,
                     modifier = Modifier.padding(horizontal = 0.dp)
                 )
@@ -108,7 +111,7 @@ fun AllOutagesScreen(
                     ) {
                         Icon(
                             imageVector = if (state.isSearchVisible) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(if (state.isSearchVisible) R.string.outages_content_desc_collapse else R.string.tracked_places_content_desc_add),
                             tint = when {
                                 state.isSearchVisible -> MaterialTheme.colorScheme.primary
                                 !state.isSearchEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -122,7 +125,7 @@ fun AllOutagesScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Home,
-                            contentDescription = "Мои адреса",
+                            contentDescription = stringResource(R.string.nav_my_addresses),
                             tint = if (state.onlyTrackedPlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -165,12 +168,15 @@ fun AllOutagesScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     EmptyTrackedPlacesState(
-                                        message = state.emptyFilterMessage,
-                                        actionText = if (state.trackedPlaces.isEmpty()) {
-                                            "Добавить адрес"
-                                        } else {
-                                            "Открыть мои адреса"
-                                        },
+                                        message = state.emptyFilterMessage.asString(),
+                                        icon = state.emptyFilterIcon ?: Icons.Default.LocationOn,
+                                        actionText = if (state.showTrackedPlacesAction) {
+                                            if (state.trackedPlaces.isEmpty()) {
+                                                stringResource(R.string.outages_action_add_address)
+                                            } else {
+                                                stringResource(R.string.outages_action_open_my_addresses)
+                                            }
+                                        } else null,
                                         onActionClick = {
                                             onOpenTrackedPlaces(state.trackedPlaces.isEmpty())
                                         }
@@ -247,7 +253,7 @@ private fun TopControls(
             value = searchQuery,
             onValueChange = onSearchChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Поиск по адресу...") },
+            placeholder = { Text(stringResource(R.string.outages_search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -268,7 +274,7 @@ private fun TopControls(
         
         if (searchQuery.isNotEmpty() || count > 0) {
             Text(
-                text = "Найдено записей: $count",
+                text = stringResource(R.string.outages_count, count),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.padding(start = Spacing.Medium)
@@ -308,7 +314,7 @@ private fun CityHeader(
         )
         Icon(
             imageVector = Icons.Default.ExpandMore,
-            contentDescription = if (isCollapsed) "Развернуть" else "Свернуть",
+            contentDescription = stringResource(if (isCollapsed) R.string.outages_content_desc_expand else R.string.outages_content_desc_collapse),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.rotate(rotation)
         )
@@ -395,14 +401,14 @@ private fun InfoRow(icon: ImageVector, text: String, color: Color = MaterialThem
 
 @Composable
 private fun StatusBadge(status: OutageStatus) {
-    val (label, containerColor, contentColor) = when (status) {
-        OutageStatus.ACTIVE -> Triple("Идёт сейчас", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-        OutageStatus.FINISHED -> Triple("Завершено", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
-        OutageStatus.UPCOMING -> Triple("Ожидается", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
+    val (labelRes, containerColor, contentColor) = when (status) {
+        OutageStatus.ACTIVE -> Triple(R.string.outages_status_active, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+        OutageStatus.FINISHED -> Triple(R.string.outages_status_finished, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+        OutageStatus.UPCOMING -> Triple(R.string.outages_status_upcoming, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
     }
     AssistChip(
         onClick = { },
-        label = { Text(label) },
+        label = { Text(stringResource(labelRes)) },
         colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor),
         border = null,
         modifier = Modifier.size(height = 32.dp, width = 120.dp)
@@ -412,8 +418,9 @@ private fun StatusBadge(status: OutageStatus) {
 @Composable
 private fun EmptyTrackedPlacesState(
     message: String,
-    actionText: String,
-    onActionClick: () -> Unit
+    icon: ImageVector,
+    actionText: String? = null,
+    onActionClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -422,7 +429,7 @@ private fun EmptyTrackedPlacesState(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Default.LocationOn,
+            imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.outline
@@ -434,11 +441,14 @@ private fun EmptyTrackedPlacesState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        Spacer(Modifier.size(Spacing.Medium))
-        Button(
-            onClick = onActionClick
-        ) {
-            Text(actionText)
+        
+        if (actionText != null && onActionClick != null) {
+            Spacer(Modifier.size(Spacing.Medium))
+            Button(
+                onClick = onActionClick
+            ) {
+                Text(actionText)
+            }
         }
     }
 }

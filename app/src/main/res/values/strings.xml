@@ -1,3 +1,100 @@
 <resources>
     <string name="app_name">Отключения ДонЭнерго</string>
+
+    <!-- Navigation -->
+    <string name="nav_outages">Отключения</string>
+    <string name="nav_my_addresses">Мои адреса</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_select_branch">Выберите ваш филиал</string>
+    <string name="onboarding_start_work">Начать работу</string>
+    <string name="onboarding_header_title">График отключений</string>
+    <string name="onboarding_header_description">Мы будем уведомлять вас о плановых работах в электросетях, чтобы они не застали вас врасплох.</string>
+    <string name="onboarding_loading_branches">Загружаем список филиалов…</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_outages_name">Отключения электроэнергии</string>
+    <string name="notification_channel_outages_description">Уведомления о предстоящих отключениях</string>
+    <string name="notification_title_upcoming">Отключение через %1$s</string>
+    <string name="notification_time_from">с %1$s</string>
+    <string name="notification_time_to">до %1$s</string>
+    <string name="notification_time_range">с %1$s до %2$s</string>
+
+    <!-- All Outages Screen -->
+    <string name="outages_title">Отключения</string>
+    <string name="outages_search_placeholder">Поиск по адресу…</string>
+    <string name="outages_count">Найдено записей: %1$d</string>
+    <string name="outages_empty_state_no_tracked">Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»</string>
+    <string name="outages_empty_state_no_active">Нет активных отслеживаемых адресов. Включите их в разделе «Мои адреса»</string>
+    <string name="outages_empty_state_no_outages">Отключения не планируются</string>
+    <string name="outages_empty_state_no_tracked_outages">По вашим адресам отключения не планируются</string>
+    <string name="outages_empty_state_search_not_found">По запросу «%1$s» ничего не найдено</string>
+    <string name="outages_action_open_my_addresses">Открыть мои адреса</string>
+    <string name="outages_action_add_address">Добавить адрес</string>
+    <string name="outages_status_finished">Завершено</string>
+    <string name="outages_status_upcoming">Ожидается</string>
+    <string name="outages_status_active">Идёт сейчас</string>
+    <string name="outages_content_desc_expand">Развернуть</string>
+    <string name="outages_content_desc_collapse">Свернуть</string>
+    <string name="outages_content_desc_search">Поиск</string>
+    <string name="outages_content_desc_close_search">Закрыть поиск</string>
+
+    <!-- Tracked Places Screen -->
+    <string name="tracked_places_title">Мои адреса</string>
+    <string name="tracked_places_label_city">Населённый пункт</string>
+    <string name="tracked_places_label_street">Улица</string>
+    <string name="tracked_places_label_house">Номер дома</string>
+    <string name="tracked_places_label_name">Название</string>
+    <string name="tracked_places_button_save">Сохранить адрес</string>
+    <string name="tracked_places_header_active">Активные уведомления</string>
+    <string name="tracked_places_header_disabled">Выключено</string>
+    <string name="tracked_places_content_desc_edit">Редактировать</string>
+    <string name="tracked_places_content_desc_add">Добавить</string>
+    <string name="tracked_places_content_desc_delete">Удалить</string>
+    <string name="tracked_places_dialog_delete_title">Удаление адреса</string>
+    <string name="tracked_places_dialog_delete_message">Вы уверены, что хотите удалить адрес «%1$s»?</string>
+    <string name="tracked_places_error_empty_fields">Укажите город или улицу</string>
+    <string name="tracked_places_error_save_failed">Ошибка при сохранении: %1$s</string>
+    <string name="tracked_places_empty_title">Список пуст</string>
+    <string name="tracked_places_empty_description">Добавьте адреса, чтобы получать уведомления об отключениях.</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_section_theme">Тема оформления</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_section_branches">Филиалы</string>
+    <string name="settings_branches_description">Выберите филиалы для отслеживания отключений:</string>
+    <string name="settings_section_notifications">Уведомления</string>
+    <string name="settings_notifications_lead_time_description">За какое время предупреждать об отключении:</string>
+    <string name="settings_notifications_lead_time_value">За %1$s</string>
+    <string name="settings_section_update_interval">Интервал обновления</string>
+    <string name="settings_update_interval_value">Каждые %1$s</string>
+    <string name="settings_action_grant_notifications">Разрешить уведомления</string>
+    <string name="settings_notification_granted">Разрешено</string>
+    <string name="settings_notification_required">Требуется разрешение</string>
+    <string name="settings_action_test_notification">Отправить тестовое оповещение</string>
+    <string name="settings_action_check_notification_debug">Проверить уведомление (Debug)</string>
+    <string name="settings_section_about">О программе</string>
+    <string name="settings_about_version">Версия приложения</string>
+    <string name="settings_about_website">Сайт ДонЭнерго</string>
+    <string name="settings_about_official_schedule">Официальный график отключений</string>
+    <string name="settings_about_source_code">Исходный код проекта</string>
+    <string name="settings_selection_selected">Выбрано</string>
+    <string name="settings_selection_hint">Нажмите для выбора</string>
+
+    <!-- Plurals -->
+    <plurals name="hour">
+        <item quantity="one">%1$d час</item>
+        <item quantity="few">%1$d часа</item>
+        <item quantity="many">%1$d часов</item>
+        <item quantity="other">%1$d часов</item>
+    </plurals>
+
+    <!-- Common -->
+    <string name="common_syncing">Синхронизация…</string>
+    <string name="common_cancel">Отмена</string>
+    <string name="common_delete">Удалить</string>
 </resources>

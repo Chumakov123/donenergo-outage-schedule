@@ -8,9 +8,11 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.domain.usecase.*
+import com.chumakov123.outageschedule.presentation.util.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +33,7 @@ data class AllOutagesState(
     val isSearchVisible: Boolean = false,
     val isSearchEnabled: Boolean = false,
     val onlyTrackedPlaces: Boolean = true,
-    val emptyFilterMessage: String? = null,
+    val emptyFilterMessage: UiText? = null,
     val emptyFilterIcon: ImageVector? = null,
     val showTrackedPlacesAction: Boolean = false,
     val trackedPlaces: List<TrackedPlace> = emptyList(),
@@ -155,21 +157,24 @@ class AllOutagesViewModel(
         val effectiveSearchQuery = if (!effectiveSearchVisible) "" else searchQuery
 
         val activePlaces = trackedPlaces.filter { it.isEnabled }
-        val showTrackedPlacesAction = onlyTrackedPlaces && (
-                trackedPlaces.isEmpty() || activePlaces.isEmpty()
-                )
+        
+        var showTrackedPlacesAction = false
 
         val (emptyMessage, emptyIcon) = when {
-            onlyTrackedPlaces && trackedPlaces.isEmpty() ->
-                "Нет отслеживаемых адресов. Добавьте их в разделе «Мои адреса»" to Icons.Default.LocationOn
-            onlyTrackedPlaces && activePlaces.isEmpty() ->
-                "Нет активных отслеживаемых адресов. Включите их в разделе «Мои адреса»" to Icons.Default.LocationOff
+            onlyTrackedPlaces && trackedPlaces.isEmpty() -> {
+                showTrackedPlacesAction = true
+                UiText.StringResource(R.string.outages_empty_state_no_tracked) to Icons.Default.LocationOn
+            }
+            onlyTrackedPlaces && activePlaces.isEmpty() -> {
+                showTrackedPlacesAction = true
+                UiText.StringResource(R.string.outages_empty_state_no_active) to Icons.Default.LocationOff
+            }
             filtered.isEmpty() && effectiveSearchQuery.isNotBlank() ->
-                "По запросу «$effectiveSearchQuery» ничего не найдено" to Icons.Default.Search
+                UiText.StringResource(R.string.outages_empty_state_search_not_found, effectiveSearchQuery) to Icons.Default.Search
             filtered.isEmpty() && onlyTrackedPlaces ->
-                "По вашим адресам отключения не планируются" to Icons.Default.CheckCircle
+                UiText.StringResource(R.string.outages_empty_state_no_tracked_outages) to Icons.Default.CheckCircle
             filtered.isEmpty() && rawOutages.isEmpty() ->
-                "Отключения не планируются" to Icons.Default.CheckCircle
+                UiText.StringResource(R.string.outages_empty_state_no_outages) to Icons.Default.CheckCircle
             else -> null to null
         }
 

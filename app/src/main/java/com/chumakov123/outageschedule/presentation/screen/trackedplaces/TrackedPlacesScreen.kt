@@ -44,10 +44,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
@@ -71,7 +73,6 @@ fun TrackedPlacesScreen(
 
     ScreenContainer {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Кнопка развертывания формы
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,7 +81,7 @@ fun TrackedPlacesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SectionHeader(
-                    title = "Мои адреса",
+                    title = stringResource(R.string.tracked_places_title),
                     icon = Icons.Default.Home,
                     modifier = Modifier.padding(horizontal = 0.dp)
                 )
@@ -88,7 +89,7 @@ fun TrackedPlacesScreen(
                 IconButton(onClick = viewModel::onToggleForm) {
                     Icon(
                         imageVector = if (state.isFormVisible) Icons.Default.Close else Icons.Default.AddHome,
-                        contentDescription = if (state.isFormVisible) "Свернуть" else "Добавить",
+                        contentDescription = stringResource(if (state.isFormVisible) R.string.outages_content_desc_collapse else R.string.tracked_places_content_desc_add),
                         tint = if (state.isFormVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -99,7 +100,6 @@ fun TrackedPlacesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                 ) {
-                    // Анимированная форма добавления
                     item {
                         this@Column.AnimatedVisibility(visible = state.isFormVisible) {
                             ElevatedCard(
@@ -119,7 +119,7 @@ fun TrackedPlacesScreen(
                                         value = state.title,
                                         onValueChange = viewModel::onTitleChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        label = { Text("Название") },
+                                        label = { Text(stringResource(R.string.tracked_places_label_name)) },
                                         leadingIcon = { Icon(Icons.Default.Place, null) },
                                         singleLine = true
                                     )
@@ -128,7 +128,7 @@ fun TrackedPlacesScreen(
                                         value = state.city,
                                         onValueChange = viewModel::onCityChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        label = { Text("Населённый пункт") },
+                                        label = { Text(stringResource(R.string.tracked_places_label_city)) },
                                         leadingIcon = { Icon(Icons.Default.LocationCity, null) },
                                         singleLine = true
                                     )
@@ -140,7 +140,7 @@ fun TrackedPlacesScreen(
                                         value = state.street,
                                         onValueChange = viewModel::onStreetChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        label = { Text("Улица") },
+                                        label = { Text(stringResource(R.string.tracked_places_label_street)) },
                                         leadingIcon = { Icon(Icons.Default.Map, null) },
                                         singleLine = true
                                     )
@@ -152,14 +152,14 @@ fun TrackedPlacesScreen(
                                         value = state.house,
                                         onValueChange = viewModel::onHouseChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        label = { Text("Номер дома") },
+                                        label = { Text(stringResource(R.string.tracked_places_label_house)) },
                                         leadingIcon = { Icon(Icons.Default.Home, null) },
                                         singleLine = true
                                     )
 
                                     if (state.error != null) {
                                         Text(
-                                            state.error,
+                                            state.error.asString(),
                                             color = MaterialTheme.colorScheme.error,
                                             style = MaterialTheme.typography.labelSmall
                                         )
@@ -170,7 +170,7 @@ fun TrackedPlacesScreen(
                                         enabled = state.city.isNotBlank() || state.street.isNotBlank(),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text("Сохранить адрес")
+                                        Text(stringResource(R.string.tracked_places_button_save))
                                     }
                                 }
                             }
@@ -178,11 +178,10 @@ fun TrackedPlacesScreen(
                     }
 
                     if (state.places.isNotEmpty()) {
-                        // Группировка: Активные
                         val activePlaces = state.places.filter { it.isEnabled }
                         if (activePlaces.isNotEmpty()) {
                             stickyHeader {
-                                SubHeader("Активные уведомления", Icons.Default.NotificationsActive)
+                                SubHeader(stringResource(R.string.tracked_places_header_active), Icons.Default.NotificationsActive)
                             }
                             items(activePlaces, key = { it.id }) { place ->
                                 TrackedPlaceItem(
@@ -195,11 +194,10 @@ fun TrackedPlacesScreen(
                             }
                         }
 
-                        // Группировка: Выключенные
                         val inactivePlaces = state.places.filter { !it.isEnabled }
                         if (inactivePlaces.isNotEmpty()) {
                             stickyHeader {
-                                SubHeader("Выключено", Icons.Default.NotificationsOff)
+                                SubHeader(stringResource(R.string.tracked_places_header_disabled), Icons.Default.NotificationsOff)
                             }
                             items(inactivePlaces, key = { it.id }) { place ->
                                 TrackedPlaceItem(
@@ -320,7 +318,7 @@ private fun TrackedPlaceItem(
                 IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Редактировать",
+                        contentDescription = stringResource(R.string.tracked_places_content_desc_edit),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.outline
                     )
@@ -328,7 +326,7 @@ private fun TrackedPlaceItem(
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = "Удалить",
+                        contentDescription = stringResource(R.string.tracked_places_content_desc_delete),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
@@ -349,10 +347,10 @@ private fun EmptyPlacesState(
     ) {
         Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
         Spacer(Modifier.size(Spacing.Medium))
-        Text("Список пуст", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Добавьте адреса, чтобы получать уведомления об отключениях.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.tracked_places_empty_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.tracked_places_empty_description), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.size(Spacing.Large))
-        Button(onClick = onAddClick) { Text("Добавить адрес") }
+        Button(onClick = onAddClick) { Text(stringResource(R.string.outages_action_add_address)) }
     }
 }
 
@@ -360,7 +358,7 @@ private fun EmptyPlacesState(
 private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesViewModel) {
     AlertDialog(
         onDismissRequest = { viewModel.cancelEditing() },
-        title = { Text("Редактирование") },
+        title = { Text(stringResource(R.string.tracked_places_content_desc_edit)) },
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         text = {
@@ -368,7 +366,7 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 OutlinedTextField(
                     value = state.editTitle,
                     onValueChange = viewModel::onEditTitleChange,
-                    label = { Text("Название (Дом, Работа...)") },
+                    label = { Text(stringResource(R.string.tracked_places_label_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Place, null) },
                     singleLine = true
@@ -377,7 +375,7 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 OutlinedTextField(
                     value = state.editCity,
                     onValueChange = viewModel::onEditCityChange,
-                    label = { Text("Населённый пункт") },
+                    label = { Text(stringResource(R.string.tracked_places_label_city)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.LocationCity, null) },
                     singleLine = true
@@ -389,7 +387,7 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 OutlinedTextField(
                     value = state.editStreet,
                     onValueChange = viewModel::onEditStreetChange,
-                    label = { Text("Улица") },
+                    label = { Text(stringResource(R.string.tracked_places_label_street)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Map, null) },
                     singleLine = true
@@ -401,14 +399,14 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 OutlinedTextField(
                     value = state.editHouse,
                     onValueChange = viewModel::onEditHouseChange,
-                    label = { Text("Номер дома") },
+                    label = { Text(stringResource(R.string.tracked_places_label_house)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Home, null) },
                     singleLine = true
                 )
                 
                 if (state.editError != null) {
-                    Text(state.editError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    Text(state.editError.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                 }
             }
         },
@@ -417,10 +415,10 @@ private fun EditPlaceDialog(state: TrackedPlacesState, viewModel: TrackedPlacesV
                 onClick = viewModel::saveEditedPlace,
                 enabled = state.editCity.isNotBlank() || state.editStreet.isNotBlank()
             ) { 
-                Text("Сохранить", fontWeight = FontWeight.Bold) 
+                Text(stringResource(R.string.tracked_places_button_save), fontWeight = FontWeight.Bold) 
             } 
         },
-        dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text("Отмена") } }
+        dismissButton = { TextButton(onClick = viewModel::cancelEditing) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 
@@ -432,18 +430,18 @@ private fun DeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Удаление адреса") },
+        title = { Text(stringResource(R.string.tracked_places_dialog_delete_title)) },
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
-        text = { Text("Вы уверены, что хотите удалить адрес \"${place.title}\"?") },
+        text = { Text(stringResource(R.string.tracked_places_dialog_delete_message, place.title)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Удалить", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

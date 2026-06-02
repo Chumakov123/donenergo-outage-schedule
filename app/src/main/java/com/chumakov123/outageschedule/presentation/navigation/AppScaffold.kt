@@ -1,6 +1,7 @@
 package com.chumakov123.outageschedule.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -12,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -82,12 +84,12 @@ fun AppScaffold(
                                 }
                             },
                             icon = {
-                                androidx.compose.material3.Icon(
+                                Icon(
                                     imageVector = item.icon,
-                                    contentDescription = item.title
+                                    contentDescription = stringResource(item.titleRes)
                                 )
                             },
-                            label = { Text(item.title) }
+                            label = { Text(stringResource(item.titleRes)) }
                         )
                     }
                 }

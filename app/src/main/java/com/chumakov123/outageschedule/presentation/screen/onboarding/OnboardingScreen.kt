@@ -34,9 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.chumakov123.outageschedule.R
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.theme.Spacing
@@ -66,7 +68,7 @@ fun OnboardingScreen(
                 } else {
                     item {
                         Text(
-                            text = "Выберите ваш филиал",
+                            text = stringResource(R.string.onboarding_select_branch),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = Spacing.Small)
@@ -99,7 +101,7 @@ fun OnboardingScreen(
                 shape = MaterialTheme.shapes.large
             ) {
                 Text(
-                    text = "Начать работу",
+                    text = stringResource(R.string.onboarding_start_work),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -133,7 +135,7 @@ private fun OnboardingHeader() {
         Spacer(modifier = Modifier.height(Spacing.Medium))
         
         Text(
-            text = "График отключений",
+            text = stringResource(R.string.onboarding_header_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface
@@ -142,7 +144,7 @@ private fun OnboardingHeader() {
         Spacer(modifier = Modifier.height(Spacing.Small))
         
         Text(
-            text = "Мы будем уведомлять вас о плановых работах в электросетях, чтобы они не застали вас врасплох.",
+            text = stringResource(R.string.onboarding_header_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -230,7 +232,7 @@ private fun LoadingBranchesState() {
         CircularProgressIndicator(modifier = Modifier.size(32.dp))
         Spacer(modifier = Modifier.height(Spacing.Medium))
         Text(
-            "Загружаем список филиалов...",
+            text = stringResource(R.string.onboarding_loading_branches),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
