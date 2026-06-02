@@ -29,7 +29,6 @@ import com.chumakov123.outageschedule.domain.usecase.*
 import com.chumakov123.outageschedule.domain.util.NotificationPermissionChecker
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
-import com.chumakov123.outageschedule.presentation.screen.history.HistoryViewModel
 import com.chumakov123.outageschedule.presentation.screen.onboarding.OnboardingViewModel
 import com.chumakov123.outageschedule.presentation.screen.settings.SettingsViewModel
 import com.chumakov123.outageschedule.presentation.screen.trackedplaces.TrackedPlacesViewModel
@@ -117,7 +116,6 @@ val domainModule = module {
     factoryOf(::RefreshOutagesUseCase)
     factoryOf(::PrepareOutageNotificationsUseCase)
     factoryOf(::GetOutagesUseCase)
-    factoryOf(::GetHistoryUseCase)
     factoryOf(::GetLocationSuggestionsUseCase)
     factoryOf(::GetBranchesUseCase)
     factoryOf(::GetNotificationPermissionUseCase)
@@ -135,7 +133,6 @@ val domainModule = module {
 val presentationModule = module {
     viewModelOf(::AppEntryViewModel)
     viewModelOf(::AllOutagesViewModel)
-    viewModelOf(::HistoryViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::TrackedPlacesViewModel)

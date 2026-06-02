@@ -23,11 +23,6 @@ val bottomNavItems = listOf(
         title = "Мои адреса",
         icon = Icons.Outlined.Home
     ),
-//    BottomNavItem(
-//        route = Screen.History.route,
-//        title = "Архив",
-//        icon = Icons.Outlined.History
-//    ),
     BottomNavItem(
         route = Screen.Settings.route,
         title = "Настройки",

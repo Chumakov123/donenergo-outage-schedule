@@ -44,16 +44,6 @@ interface OutageDao {
         """
         SELECT * FROM outages
         WHERE branchUrl IN (:branchUrls)
-          AND status = 'FINISHED'
-        ORDER BY fetchedAt DESC, branchName, city, address
-        """
-    )
-    fun observeHistory(branchUrls: List<String>): Flow<List<OutageEntity>>
-
-    @Query(
-        """
-        SELECT * FROM outages
-        WHERE branchUrl IN (:branchUrls)
           AND status = 'UPCOMING'
         ORDER BY branchName, city, address
         """

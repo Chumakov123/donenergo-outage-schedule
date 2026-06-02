@@ -140,11 +140,6 @@ class DonEnergoOutageRepository(
         return dao.observeOutages(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
     }
 
-    override fun observeHistory(branchUrls: Set<String>): Flow<List<Outage>> {
-        if (branchUrls.isEmpty()) return flowOf(emptyList())
-        return dao.observeHistory(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
-    }
-
     override fun observeRecentHistory(branchUrls: Set<String>, days: Int): Flow<List<Outage>> {
         if (branchUrls.isEmpty()) return flowOf(emptyList())
         val threshold = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
