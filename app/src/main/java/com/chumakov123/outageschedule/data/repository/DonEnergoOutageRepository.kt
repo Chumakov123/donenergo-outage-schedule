@@ -11,6 +11,7 @@ import com.chumakov123.outageschedule.data.remote.datasource.OutageRemoteDataSou
 import com.chumakov123.outageschedule.data.remote.parser.OutageHtmlParser
 import com.chumakov123.outageschedule.domain.model.Branch
 import com.chumakov123.outageschedule.domain.model.Outage
+import com.chumakov123.outageschedule.domain.model.OutageStatus
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
 import com.chumakov123.outageschedule.domain.trackedplace.AddressSegmentParser
@@ -56,6 +57,7 @@ class DonEnergoOutageRepository(
     }
 
     override suspend fun refreshOutages(branches: List<Branch>) = coroutineScope {
+        cleanupHistory(daysToKeep = 3)
         for (branch in branches) {
             launch {
                 try {
@@ -65,6 +67,17 @@ class DonEnergoOutageRepository(
 
                     val nowMillis = System.currentTimeMillis()
                     val nowDateTime = LocalDateTime.now()
+
+                    val existingNonFinished = dao.getNonFinishedByBranch(branch.url)
+                    val finalizedEntities = existingNonFinished.mapNotNull { entity ->
+                        val start = OutageDateTimeParser.parse(entity.startDate, entity.startTime)
+                        val end = OutageDateTimeParser.parse(entity.endDate, entity.endTime)
+                        val newStatus = OutageStatusCalculator.calculate(nowDateTime, start, end)
+                        
+                        if (newStatus == OutageStatus.FINISHED) {
+                            entity.copy(status = OutageStatus.FINISHED.name, fetchedAt = nowMillis)
+                        } else null
+                    }
 
                     val domainOutages = parsedOutages.mapNotNull { parsed ->
                         if (parsed.startDate != null && parsed.endDate != null  && parsed.address != null) {
@@ -91,6 +104,10 @@ class DonEnergoOutageRepository(
                     val localities = buildLocalityIndex(branch, parsedOutages, nowMillis)
 
                     database.withTransaction {
+                        if (finalizedEntities.isNotEmpty()) {
+                            dao.insertAll(finalizedEntities)
+                        }
+
                         dao.deleteCurrentByBranchUrl(branch.url)
                         localityDao.deleteByBranchUrl(branch.url)
 
@@ -126,6 +143,17 @@ class DonEnergoOutageRepository(
     override fun observeHistory(branchUrls: Set<String>): Flow<List<Outage>> {
         if (branchUrls.isEmpty()) return flowOf(emptyList())
         return dao.observeHistory(branchUrls.toList()).map { list -> list.map { it.toDomain() } }
+    }
+
+    override fun observeRecentHistory(branchUrls: Set<String>, days: Int): Flow<List<Outage>> {
+        if (branchUrls.isEmpty()) return flowOf(emptyList())
+        val threshold = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+        return dao.observeRecentHistory(branchUrls.toList(), threshold).map { list -> list.map { it.toDomain() } }
+    }
+
+    override suspend fun cleanupHistory(daysToKeep: Int) {
+        val threshold = System.currentTimeMillis() - (daysToKeep * 24 * 60 * 60 * 1000L)
+        dao.cleanupOldHistory(threshold)
     }
 
     private fun buildLocalityIndex(

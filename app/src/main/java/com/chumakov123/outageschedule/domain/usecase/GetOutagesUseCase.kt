@@ -29,7 +29,12 @@ class GetOutagesUseCase(
             if (urls.isEmpty()) {
                 flowOf(emptyList())
             } else {
-                outageRepository.observeOutages(urls).map { outages ->
+                combine(
+                    outageRepository.observeOutages(urls),
+                    outageRepository.observeRecentHistory(urls, days = 3)
+                ) { current, history ->
+                    current + history
+                }.map { outages ->
                     val activePlaces = places.filter { it.isEnabled }
                     if (onlyTracked) {
                         TrackedPlaceMatcher.filter(outages, activePlaces)

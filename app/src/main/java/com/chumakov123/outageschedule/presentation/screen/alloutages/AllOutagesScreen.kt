@@ -175,10 +175,9 @@ fun AllOutagesScreen(
                             else -> {
                                 val groupedOutages = state.outages
                                     .sortedWith(
-                                        compareBy(
-                                            { parseDateTime(it) ?: LocalDateTime.MAX },
-                                            { it.address.lowercase() }
-                                        )
+                                        compareBy<Outage> { it.status == OutageStatus.FINISHED }
+                                            .thenBy { parseDateTime(it) ?: LocalDateTime.MAX }
+                                            .thenBy { it.address.lowercase() }
                                     )
                                     .groupBy { it.city.trim() }
 
@@ -288,22 +287,27 @@ private fun OutageItem(
 ) {
     val matches = TrackedPlaceMatcher.findAllMatches(outage, trackedPlaces)
     val highlights = matches.mapNotNull { it.matchedStreetText }.filter { it.isNotBlank() }.distinct()
+    val isFinished = outage.status == OutageStatus.FINISHED
 
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Medium, vertical = 4.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isFinished) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isFinished) 0.dp else 2.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(Spacing.Medium),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small)
             ) {
-                if (outage.status == OutageStatus.ACTIVE || outage.status == OutageStatus.FINISHED) {
+                if (outage.status != OutageStatus.UPCOMING) {
                     StatusBadge(outage.status)
                 }
 
@@ -315,7 +319,8 @@ private fun OutageItem(
                 Text(
                     text = buildHighlightedAddress(outage.address, highlights),
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = if (isFinished) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurface
                     )
                 )
 
@@ -332,7 +337,7 @@ private fun OutageItem(
                 Icon(
                     Icons.Default.LocationOn,
                     null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (isFinished) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(Spacing.Medium)
