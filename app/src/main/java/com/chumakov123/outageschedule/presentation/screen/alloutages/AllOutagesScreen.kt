@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.OutageStatus
+import com.chumakov123.outageschedule.domain.model.TrackedPlace
 import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
 import com.chumakov123.outageschedule.presentation.component.ErrorState
 import com.chumakov123.outageschedule.presentation.component.LoadingState
@@ -180,6 +182,10 @@ fun AllOutagesScreen(
                                     )
                                     .groupBy { it.city.trim() }
 
+                                val activePlaces = remember(state.trackedPlaces) {
+                                    state.trackedPlaces.filter { it.isEnabled }
+                                }
+
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(Spacing.Small)
@@ -193,7 +199,7 @@ fun AllOutagesScreen(
                                             OutageItem(
                                                 modifier = Modifier.animateItem(),
                                                 outage = outage,
-                                                trackedPlaces = state.trackedPlaces
+                                                trackedPlaces = activePlaces
                                             )
                                         }
                                     }
@@ -278,7 +284,7 @@ private fun CityHeader(city: String) {
 private fun OutageItem(
     modifier: Modifier = Modifier,
     outage: Outage,
-    trackedPlaces: List<com.chumakov123.outageschedule.domain.model.TrackedPlace>
+    trackedPlaces: List<TrackedPlace>
 ) {
     val matches = TrackedPlaceMatcher.findAllMatches(outage, trackedPlaces)
     val highlights = matches.mapNotNull { it.matchedStreetText }.filter { it.isNotBlank() }.distinct()
