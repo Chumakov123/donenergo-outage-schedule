@@ -110,7 +110,7 @@ fun SettingsScreen(
                 }
             }
 
-            item { HorizontalDivider(Modifier.padding(vertical = Spacing.Small)) }
+            item { HorizontalDivider(Modifier.padding(vertical = Spacing.Medium)) }
 
             // Раздел: Интервал обновления
             item {

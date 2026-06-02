@@ -3,10 +3,10 @@ package com.chumakov123.outageschedule.presentation.navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.AppTheme
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
+import com.chumakov123.outageschedule.domain.usecase.GetInitialStateUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 data class AppEntryState(
@@ -16,7 +16,7 @@ data class AppEntryState(
 )
 
 class AppEntryViewModel(
-    private val settings: AppSettingsRepository
+    private val getInitialStateUseCase: GetInitialStateUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AppEntryState())
@@ -24,17 +24,12 @@ class AppEntryViewModel(
 
     init {
         viewModelScope.launch {
-            combine(
-                settings.isOnboardingCompletedFlow,
-                settings.selectedThemeFlow
-            ) { completed, theme ->
-                AppEntryState(
+            getInitialStateUseCase().collectLatest { initial ->
+                _state.value = AppEntryState(
                     isLoading = false,
-                    isOnboardingCompleted = completed,
-                    theme = theme
+                    isOnboardingCompleted = initial.isOnboardingCompleted,
+                    theme = initial.theme
                 )
-            }.collect {
-                _state.value = it
             }
         }
     }

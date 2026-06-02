@@ -21,15 +21,6 @@ object TrackedPlaceMatcher {
         }
     }
 
-    fun findBestMatch(
-        outage: Outage,
-        places: List<TrackedPlace>
-    ): TrackedPlaceMatch? {
-        return places.asSequence()
-            .mapNotNull { place -> findMatch(place, outage) }
-            .firstOrNull()
-    }
-
     fun findAllMatches(
         outage: Outage,
         places: List<TrackedPlace>

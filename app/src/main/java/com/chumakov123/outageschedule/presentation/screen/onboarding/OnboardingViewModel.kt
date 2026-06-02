@@ -2,11 +2,11 @@ package com.chumakov123.outageschedule.presentation.screen.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chumakov123.outageschedule.domain.branch.BranchSelector
 import com.chumakov123.outageschedule.domain.model.Branch
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
-import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
-import com.chumakov123.outageschedule.domain.repository.BranchRepository
+import com.chumakov123.outageschedule.domain.usecase.CompleteOnboardingUseCase
+import com.chumakov123.outageschedule.domain.usecase.GetBranchesUseCase
+import com.chumakov123.outageschedule.domain.usecase.GetLocationSuggestionsUseCase
+import com.chumakov123.outageschedule.domain.usecase.ObserveSettingsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,9 +24,10 @@ data class OnboardingState(
 )
 
 class OnboardingViewModel(
-    private val branchRepository: BranchRepository,
-    private val localityRepository: BranchLocalityRepository,
-    private val settings: AppSettingsRepository
+    private val getBranchesUseCase: GetBranchesUseCase,
+    private val suggestionsUseCase: GetLocationSuggestionsUseCase,
+    private val observeSettingsUseCase: ObserveSettingsUseCase,
+    private val completeOnboardingUseCase: CompleteOnboardingUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
@@ -40,11 +41,11 @@ class OnboardingViewModel(
 
     private fun loadBranches() {
         viewModelScope.launch(Dispatchers.IO) {
-            val branches = branchRepository.getBranches()
+            val branches = getBranchesUseCase()
             _state.update { it.copy(branches = branches) }
 
             if (_state.value.selectedUrls.isEmpty()) {
-                val default = BranchSelector.findDefault(branches)
+                val default = getBranchesUseCase.getDefaultBranch(branches)
                 _state.update { it.copy(selectedUrls = setOf(default.url)) }
             }
         }
@@ -52,7 +53,7 @@ class OnboardingViewModel(
 
     private fun loadSavedSelection() {
         viewModelScope.launch(Dispatchers.IO) {
-            val savedUrls = settings.selectedBranchUrlsFlow.first()
+            val savedUrls = observeSettingsUseCase.selectedBranchUrls.first()
             if (savedUrls.isNotEmpty()) {
                 _state.update { it.copy(selectedUrls = savedUrls) }
             }
@@ -61,7 +62,7 @@ class OnboardingViewModel(
 
     private fun observeLocalities() {
         viewModelScope.launch(Dispatchers.IO) {
-            localityRepository.observeLocalities().collectLatest { localities ->
+            suggestionsUseCase.observeLocalities().collectLatest { localities ->
                 val cities = localities
                     .groupBy { it.branchUrl }
                     .mapValues { (_, items) ->
@@ -111,10 +112,7 @@ class OnboardingViewModel(
     fun finish(onFinish: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                settings.setSelectedBranchUrls(
-                    _state.value.selectedUrls
-                )
-                settings.setOnboardingCompleted(true)
+                completeOnboardingUseCase(_state.value.selectedUrls)
             }
             onFinish()
         }

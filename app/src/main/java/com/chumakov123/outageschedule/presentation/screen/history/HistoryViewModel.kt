@@ -3,16 +3,11 @@ package com.chumakov123.outageschedule.presentation.screen.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.Outage
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
-import com.chumakov123.outageschedule.domain.repository.OutageRepository
+import com.chumakov123.outageschedule.domain.usecase.GetHistoryUseCase
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -24,8 +19,7 @@ data class HistoryState(
 )
 
 class HistoryViewModel(
-    private val outageRepository: OutageRepository,
-    private val settingsRepository: AppSettingsRepository
+    private val getHistoryUseCase: GetHistoryUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HistoryState())
@@ -35,23 +29,16 @@ class HistoryViewModel(
         observeHistory()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeHistory() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow
-                .distinctUntilChanged()
-                .flatMapLatest { urls ->
-                    if (urls.isEmpty()) flowOf(emptyList())
-                    else outageRepository.observeHistory(urls)
+            getHistoryUseCase().collectLatest { items ->
+                _state.update { 
+                    it.copy(
+                        rawItems = items,
+                        isLoading = false
+                    ).applyFilter()
                 }
-                .collectLatest { items ->
-                    _state.update { 
-                        it.copy(
-                            rawItems = items,
-                            isLoading = false
-                        ).applyFilter()
-                    }
-                }
+            }
         }
     }
 
@@ -60,16 +47,7 @@ class HistoryViewModel(
     }
 
     private fun HistoryState.applyFilter(): HistoryState {
-        val filtered = if (searchQuery.isBlank()) {
-            rawItems
-        } else {
-            val q = searchQuery.trim().lowercase()
-            rawItems.filter { 
-                it.address.lowercase().contains(q) || 
-                it.city.lowercase().contains(q) ||
-                it.reason?.lowercase()?.contains(q) == true
-            }
-        }
+        val filtered = getHistoryUseCase.filterBySearch(rawItems, searchQuery)
         return copy(filteredItems = filtered)
     }
 }

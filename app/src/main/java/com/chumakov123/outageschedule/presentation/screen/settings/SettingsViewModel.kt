@@ -5,10 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.debug.DebugActions
 import com.chumakov123.outageschedule.domain.model.AppTheme
 import com.chumakov123.outageschedule.domain.model.Branch
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
-import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
-import com.chumakov123.outageschedule.domain.repository.BranchRepository
-import com.chumakov123.outageschedule.domain.util.NotificationPermissionChecker
+import com.chumakov123.outageschedule.domain.usecase.GetBranchesUseCase
+import com.chumakov123.outageschedule.domain.usecase.GetLocationSuggestionsUseCase
+import com.chumakov123.outageschedule.domain.usecase.GetNotificationPermissionUseCase
+import com.chumakov123.outageschedule.domain.usecase.ObserveSettingsUseCase
+import com.chumakov123.outageschedule.domain.usecase.UpdateSettingsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,10 +28,11 @@ data class SettingsState(
 )
 
 class SettingsViewModel(
-    private val permissionChecker: NotificationPermissionChecker,
-    private val branchRepository: BranchRepository,
-    private val localityRepository: BranchLocalityRepository,
-    private val settingsRepository: AppSettingsRepository,
+    private val getNotificationPermissionUseCase: GetNotificationPermissionUseCase,
+    private val getBranchesUseCase: GetBranchesUseCase,
+    private val suggestionsUseCase: GetLocationSuggestionsUseCase,
+    private val observeSettingsUseCase: ObserveSettingsUseCase,
+    private val updateSettingsUseCase: UpdateSettingsUseCase,
     private val debugActions: DebugActions
 ) : ViewModel() {
 
@@ -46,29 +48,29 @@ class SettingsViewModel(
 
     private fun loadBranches() {
         viewModelScope.launch(Dispatchers.IO) {
-            val branches = branchRepository.getBranches()
+            val branches = getBranchesUseCase()
             _state.update { it.copy(branches = branches) }
         }
     }
 
     private fun observeSettings() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
+            observeSettingsUseCase.selectedBranchUrls.collectLatest { urls ->
                 _state.update { it.copy(selectedUrls = urls) }
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.outageSyncIntervalHoursFlow.collectLatest { hours ->
+            observeSettingsUseCase.syncIntervalHours.collectLatest { hours ->
                 _state.update { it.copy(syncIntervalHours = hours) }
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.notificationLeadHoursFlow.collectLatest { hours ->
+            observeSettingsUseCase.notificationLeadHours.collectLatest { hours ->
                 _state.update { it.copy(notificationLeadHours = hours) }
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedThemeFlow.collectLatest { theme ->
+            observeSettingsUseCase.selectedTheme.collectLatest { theme ->
                 _state.update { it.copy(selectedTheme = theme) }
             }
         }
@@ -76,7 +78,7 @@ class SettingsViewModel(
 
     private fun observeLocalities() {
         viewModelScope.launch(Dispatchers.IO) {
-            localityRepository.observeLocalities().collectLatest { localities ->
+            suggestionsUseCase.observeLocalities().collectLatest { localities ->
                 val cities = localities
                     .groupBy { it.branchUrl }
                     .mapValues { (_, items) ->
@@ -93,49 +95,31 @@ class SettingsViewModel(
     }
 
     fun checkNotificationPermission() {
-        val isGranted = permissionChecker.areNotificationsEnabled()
+        val isGranted = getNotificationPermissionUseCase()
         _state.update { it.copy(isNotificationPermissionGranted = isGranted) }
     }
 
     fun toggle(branch: Branch) {
         viewModelScope.launch(Dispatchers.IO) {
-            val current = _state.value.selectedUrls.toMutableSet()
-
-            if (current.contains(branch.url)) {
-                if (current.size == 1) return@launch
-                current.remove(branch.url)
-            } else {
-                current.add(branch.url)
-            }
-
-            settingsRepository.setSelectedBranchUrls(current)
+            updateSettingsUseCase.toggleBranch(branch.url)
         }
     }
 
     fun setSyncInterval(hours: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.setOutageSyncIntervalHours(hours)
+            updateSettingsUseCase.setSyncInterval(hours)
         }
     }
 
     fun toggleNotificationLeadHour(hours: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            val current = _state.value.notificationLeadHours.toMutableSet()
-
-            if (current.contains(hours)) {
-                if (current.size == 1) return@launch
-                current.remove(hours)
-            } else {
-                current.add(hours)
-            }
-
-            settingsRepository.setNotificationLeadHours(current)
+            updateSettingsUseCase.toggleNotificationLeadHour(hours)
         }
     }
 
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.setSelectedTheme(theme)
+            updateSettingsUseCase.setTheme(theme)
         }
     }
 

@@ -205,7 +205,7 @@ private fun HistoryItem(
             }
 
             if (!outage.reason.isNullOrBlank()) {
-                InfoRow(Icons.Default.Info, outage.reason!!, MaterialTheme.colorScheme.onSurfaceVariant)
+                InfoRow(Icons.Default.Info, outage.reason, MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

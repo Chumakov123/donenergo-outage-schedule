@@ -25,8 +25,7 @@ import com.chumakov123.outageschedule.domain.repository.BranchRepository
 import com.chumakov123.outageschedule.domain.repository.NotificationLogRepository
 import com.chumakov123.outageschedule.domain.repository.OutageRepository
 import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
-import com.chumakov123.outageschedule.domain.usecase.PrepareOutageNotificationsUseCase
-import com.chumakov123.outageschedule.domain.usecase.RefreshOutagesUseCase
+import com.chumakov123.outageschedule.domain.usecase.*
 import com.chumakov123.outageschedule.domain.util.NotificationPermissionChecker
 import com.chumakov123.outageschedule.presentation.navigation.AppEntryViewModel
 import com.chumakov123.outageschedule.presentation.screen.alloutages.AllOutagesViewModel
@@ -117,6 +116,20 @@ val dataModule = module {
 val domainModule = module {
     factoryOf(::RefreshOutagesUseCase)
     factoryOf(::PrepareOutageNotificationsUseCase)
+    factoryOf(::GetOutagesUseCase)
+    factoryOf(::GetHistoryUseCase)
+    factoryOf(::GetLocationSuggestionsUseCase)
+    factoryOf(::GetBranchesUseCase)
+    factoryOf(::GetNotificationPermissionUseCase)
+    factoryOf(::GetInitialStateUseCase)
+    factoryOf(::ObserveSettingsUseCase)
+    factoryOf(::UpdateSettingsUseCase)
+    factoryOf(::SetOnlyTrackedPlacesUseCase)
+    factoryOf(::ObserveTrackedPlacesUseCase)
+    factoryOf(::AddTrackedPlaceUseCase)
+    factoryOf(::UpdateTrackedPlaceUseCase)
+    factoryOf(::DeleteTrackedPlaceUseCase)
+    factoryOf(::CompleteOnboardingUseCase)
 }
 
 val presentationModule = module {

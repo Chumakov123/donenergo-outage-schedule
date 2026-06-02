@@ -10,21 +10,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.Outage
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
-import com.chumakov123.outageschedule.domain.repository.BranchRepository
-import com.chumakov123.outageschedule.domain.repository.OutageRepository
-import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
-import com.chumakov123.outageschedule.domain.trackedplace.TrackedPlaceMatcher
+import com.chumakov123.outageschedule.domain.usecase.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -45,10 +38,11 @@ data class AllOutagesState(
 )
 
 class AllOutagesViewModel(
-    private val outageRepository: OutageRepository,
-    private val branchRepository: BranchRepository,
-    private val settingsRepository: AppSettingsRepository,
-    private val trackedPlaceRepository: TrackedPlaceRepository
+    private val getOutagesUseCase: GetOutagesUseCase,
+    private val refreshOutagesUseCase: RefreshOutagesUseCase,
+    private val observeSettingsUseCase: ObserveSettingsUseCase,
+    private val setOnlyTrackedPlacesUseCase: SetOnlyTrackedPlacesUseCase,
+    private val observeTrackedPlacesUseCase: ObserveTrackedPlacesUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AllOutagesState())
@@ -64,7 +58,7 @@ class AllOutagesViewModel(
 
     private fun refreshOnSelectionChange() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow
+            observeSettingsUseCase.selectedBranchUrls
                 .distinctUntilChanged()
                 .collectLatest { urls ->
                     if (urls.isEmpty()) {
@@ -78,7 +72,7 @@ class AllOutagesViewModel(
 
     fun onRefresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            val urls = settingsRepository.selectedBranchUrlsFlow.first()
+            val urls = observeSettingsUseCase.selectedBranchUrls.first()
             refresh(urls)
         }
     }
@@ -102,15 +96,14 @@ class AllOutagesViewModel(
 
         _state.update { it.copy(isRefreshing = true) }
         runCatching {
-            val branchMap = branchRepository.getBranches().associateBy { it.url }
-            val branchesToFetch = urls.filter { url ->
+            val urlsToFetch = urls.filter { url ->
                 _state.value.isLoading || (currentTime - (lastRefreshTimes[url] ?: 0L) >= REFRESH_THRESHOLD)
-            }.mapNotNull { branchMap[it] }
+            }.toSet()
 
-            if (branchesToFetch.isNotEmpty()) {
-                outageRepository.refreshOutages(branchesToFetch)
+            if (urlsToFetch.isNotEmpty()) {
+                refreshOutagesUseCase.refreshForSelectedUrls(urlsToFetch)
                 val now = System.currentTimeMillis()
-                branchesToFetch.forEach { lastRefreshTimes[it.url] = now }
+                urlsToFetch.forEach { lastRefreshTimes[it] = now }
             }
         }.onFailure { throwable ->
             _state.update { it.copy(error = throwable.message) }
@@ -118,28 +111,21 @@ class AllOutagesViewModel(
         _state.update { it.copy(isLoading = false, isRefreshing = false) }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow
-                .distinctUntilChanged()
-                .flatMapLatest { urls ->
-                    if (urls.isEmpty()) flowOf(emptyList())
-                    else outageRepository.observeOutages(urls)
-                }
-                .collectLatest { outages ->
-                    _state.update { it.copy(rawOutages = outages).applyFilter() }
-                }
+            getOutagesUseCase().collectLatest { outages ->
+                _state.update { it.copy(rawOutages = outages).applyFilter() }
+            }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            trackedPlaceRepository.observePlaces().collectLatest { places ->
+            observeTrackedPlacesUseCase().collectLatest { places ->
                 _state.update { it.copy(trackedPlaces = places).applyFilter() }
             }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.onlyTrackedPlacesFlow.collectLatest { onlyTracked ->
+            observeSettingsUseCase.onlyTrackedPlaces.collectLatest { onlyTracked ->
                 _state.update { it.copy(onlyTrackedPlaces = onlyTracked).applyFilter() }
             }
         }
@@ -161,29 +147,13 @@ class AllOutagesViewModel(
     }
 
     private fun AllOutagesState.applyFilter(): AllOutagesState {
-        val activePlaces = trackedPlaces.filter { it.isEnabled }
+        val filtered = getOutagesUseCase.filterBySearch(rawOutages, searchQuery)
         
-        val baseList = if (onlyTrackedPlaces) {
-            TrackedPlaceMatcher.filter(rawOutages, activePlaces)
-        } else {
-            rawOutages
-        }
-
-        val canSearch = baseList.isNotEmpty()
-
+        val canSearch = rawOutages.isNotEmpty()
         val effectiveSearchVisible = if (!canSearch) false else isSearchVisible
         val effectiveSearchQuery = if (!effectiveSearchVisible) "" else searchQuery
 
-        var filtered = baseList
-        if (effectiveSearchQuery.isNotBlank()) {
-            val q = effectiveSearchQuery.trim().lowercase()
-            filtered = filtered.filter { 
-                it.address.lowercase().contains(q) || 
-                it.city.lowercase().contains(q) ||
-                it.reason?.lowercase()?.contains(q) == true
-            }
-        }
-
+        val activePlaces = trackedPlaces.filter { it.isEnabled }
         val showTrackedPlacesAction = onlyTrackedPlaces && (
                 trackedPlaces.isEmpty() || activePlaces.isEmpty()
                 )
@@ -215,7 +185,7 @@ class AllOutagesViewModel(
 
     fun toggleFilter(enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.setOnlyTrackedPlaces(enabled)
+            setOnlyTrackedPlacesUseCase(enabled)
         }
     }
 }

@@ -38,31 +38,6 @@ fun LoadingState(
 }
 
 @Composable
-fun EmptyState(
-    message: String,
-    icon: ImageVector = Icons.Default.Info
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(Spacing.Large),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.outline
-        )
-        Spacer(modifier = Modifier.size(Spacing.Small))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
 fun ErrorState(
     message: String,
     icon: ImageVector = Icons.Default.ErrorOutline

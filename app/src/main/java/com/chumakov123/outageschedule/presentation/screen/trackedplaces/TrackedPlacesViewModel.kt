@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chumakov123.outageschedule.domain.model.BranchLocality
 import com.chumakov123.outageschedule.domain.model.TrackedPlace
-import com.chumakov123.outageschedule.domain.repository.AppSettingsRepository
-import com.chumakov123.outageschedule.domain.repository.BranchLocalityRepository
-import com.chumakov123.outageschedule.domain.repository.TrackedPlaceRepository
-import com.chumakov123.outageschedule.domain.trackedplace.AddressNormalizer
+import com.chumakov123.outageschedule.domain.usecase.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,9 +35,12 @@ data class TrackedPlacesState(
 )
 
 class TrackedPlacesViewModel(
-    private val repository: TrackedPlaceRepository,
-    private val localityRepository: BranchLocalityRepository,
-    private val settingsRepository: AppSettingsRepository
+    private val observeTrackedPlacesUseCase: ObserveTrackedPlacesUseCase,
+    private val addTrackedPlaceUseCase: AddTrackedPlaceUseCase,
+    private val updateTrackedPlaceUseCase: UpdateTrackedPlaceUseCase,
+    private val deleteTrackedPlaceUseCase: DeleteTrackedPlaceUseCase,
+    private val observeSettingsUseCase: ObserveSettingsUseCase,
+    private val suggestionsUseCase: GetLocationSuggestionsUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TrackedPlacesState())
@@ -48,7 +48,6 @@ class TrackedPlacesViewModel(
 
     private var selectedBranchUrls: Set<String> = emptySet()
     private var allLocalities: List<BranchLocality> = emptyList()
-    private var selectedLocalities: List<BranchLocality> = emptyList()
 
     init {
         observePlaces()
@@ -57,7 +56,7 @@ class TrackedPlacesViewModel(
 
     private fun observePlaces() {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.observePlaces().collectLatest { places ->
+            observeTrackedPlacesUseCase().collectLatest { places ->
                 _state.update { it.copy(places = places, error = null) }
             }
         }
@@ -65,23 +64,17 @@ class TrackedPlacesViewModel(
 
     private fun observeSuggestionsSource() {
         viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.selectedBranchUrlsFlow.collectLatest { urls ->
+            observeSettingsUseCase.selectedBranchUrls.collectLatest { urls ->
                 selectedBranchUrls = urls
-                updateSelectedLocalities()
                 refreshSuggestions()
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            localityRepository.observeLocalities().collectLatest { localities ->
+            suggestionsUseCase.observeLocalities().collectLatest { localities ->
                 allLocalities = localities
-                updateSelectedLocalities()
                 refreshSuggestions()
             }
         }
-    }
-
-    private fun updateSelectedLocalities() {
-        selectedLocalities = allLocalities.filter { it.branchUrl in selectedBranchUrls }
     }
 
     private fun refreshSuggestions() {
@@ -91,45 +84,15 @@ class TrackedPlacesViewModel(
             val streetQuery = if (isEditing) current.editStreet else current.street
 
             current.copy(
-                citySuggestions = buildCitySuggestions(cityQuery),
-                streetSuggestions = buildStreetSuggestions(cityQuery, streetQuery),
+                citySuggestions = suggestionsUseCase.getCitySuggestions(
+                    allLocalities, selectedBranchUrls, cityQuery
+                ),
+                streetSuggestions = suggestionsUseCase.getStreetSuggestions(
+                    allLocalities, selectedBranchUrls, cityQuery, streetQuery
+                ),
                 suggestionsLoading = false
             )
         }
-    }
-
-    private fun buildCitySuggestions(query: String): List<String> {
-        val q = AddressNormalizer.compact(query)
-
-        return selectedLocalities
-            .asSequence()
-            .map { it.city.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .filter { city ->
-                q.isBlank() || AddressNormalizer.compact(city).contains(q)
-            }
-            .take(5)
-            .toList()
-    }
-
-    private fun buildStreetSuggestions(cityQuery: String, streetQuery: String): List<String> {
-        val cityQ = AddressNormalizer.compact(cityQuery)
-        val streetQ = AddressNormalizer.compact(streetQuery)
-
-        return selectedLocalities
-            .asSequence()
-            .filter { locality ->
-                cityQ.isBlank() || AddressNormalizer.compact(locality.city).contains(cityQ)
-            }
-            .mapNotNull { it.street?.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .filter { street ->
-                streetQ.isBlank() || AddressNormalizer.compact(street).contains(streetQ)
-            }
-            .take(5)
-            .toList()
     }
 
     fun openForm() {
@@ -204,7 +167,7 @@ class TrackedPlacesViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.addPlace(
+                addTrackedPlaceUseCase(
                     TrackedPlace(
                         title = title,
                         city = city,
@@ -239,7 +202,7 @@ class TrackedPlacesViewModel(
     fun confirmDelete() {
         val place = _state.value.deletingPlace ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            repository.deletePlace(place.id)
+            deleteTrackedPlaceUseCase(place.id)
             _state.update { it.copy(deletingPlace = null) }
         }
     }
@@ -298,7 +261,7 @@ class TrackedPlacesViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.updatePlace(
+                updateTrackedPlaceUseCase(
                     TrackedPlace(
                         id = id,
                         title = title,
@@ -318,7 +281,7 @@ class TrackedPlacesViewModel(
 
     fun togglePlaceEnabled(place: TrackedPlace, enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.updatePlace(place.copy(isEnabled = enabled))
+            updateTrackedPlaceUseCase(place.copy(isEnabled = enabled))
         }
     }
 }
