@@ -73,7 +73,6 @@ import com.chumakov123.outageschedule.presentation.component.LoadingState
 import com.chumakov123.outageschedule.presentation.component.ScreenContainer
 import com.chumakov123.outageschedule.presentation.component.SectionHeader
 import com.chumakov123.outageschedule.presentation.theme.Spacing
-import com.chumakov123.outageschedule.presentation.util.UiText
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
