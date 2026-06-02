@@ -1,12 +1,14 @@
 package com.chumakov123.outageschedule.presentation.screen.alloutages
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
@@ -44,9 +47,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
@@ -54,6 +59,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.chumakov123.outageschedule.domain.model.Outage
@@ -190,11 +196,20 @@ fun AllOutagesScreen(
                                     verticalArrangement = Arrangement.spacedBy(Spacing.Small)
                                 ) {
                                     groupedOutages.forEach { (city, outages) ->
-                                        stickyHeader {
-                                            CityHeader(city)
+                                        val isCollapsed = state.collapsedCities.contains(city)
+                                        
+                                        stickyHeader(key = "header_$city") {
+                                            CityHeader(
+                                                city = city,
+                                                isCollapsed = isCollapsed,
+                                                onToggleCollapse = { viewModel.toggleCityCollapsed(city) }
+                                            )
                                         }
 
-                                        items(outages, key = { it.buildId() }) { outage ->
+                                        items(
+                                            items = if (isCollapsed) emptyList() else outages,
+                                            key = { it.buildId() }
+                                        ) { outage ->
                                             OutageItem(
                                                 modifier = Modifier.animateItem(),
                                                 outage = outage,
@@ -263,18 +278,39 @@ private fun TopControls(
 }
 
 @Composable
-private fun CityHeader(city: String) {
-    Box(
+private fun CityHeader(
+    city: String,
+    isCollapsed: Boolean,
+    onToggleCollapse: () -> Unit
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (isCollapsed) 0f else 180f,
+        label = "rotation"
+    )
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
-            .padding(horizontal = Spacing.Medium, vertical = 8.dp)
+            .clickable { onToggleCollapse() }
+            .padding(horizontal = Spacing.Medium, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = city,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Icon(
+            imageVector = Icons.Default.ExpandMore,
+            contentDescription = if (isCollapsed) "Развернуть" else "Свернуть",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.rotate(rotation)
         )
     }
 }

@@ -34,7 +34,8 @@ data class AllOutagesState(
     val emptyFilterMessage: String? = null,
     val emptyFilterIcon: ImageVector? = null,
     val showTrackedPlacesAction: Boolean = false,
-    val trackedPlaces: List<TrackedPlace> = emptyList()
+    val trackedPlaces: List<TrackedPlace> = emptyList(),
+    val collapsedCities: Set<String> = emptySet()
 )
 
 class AllOutagesViewModel(
@@ -186,6 +187,17 @@ class AllOutagesViewModel(
     fun toggleFilter(enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             setOnlyTrackedPlacesUseCase(enabled)
+        }
+    }
+
+    fun toggleCityCollapsed(city: String) {
+        _state.update { 
+            val newCollapsed = if (it.collapsedCities.contains(city)) {
+                it.collapsedCities - city
+            } else {
+                it.collapsedCities + city
+            }
+            it.copy(collapsedCities = newCollapsed)
         }
     }
 }
